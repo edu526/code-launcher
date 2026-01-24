@@ -40,6 +40,6 @@ setup(
         "": ["*.json.example", "*.desktop"],
     },
     data_files=[
-        ("share/applications", ["launcher/code-launcher.desktop"]),
+        ("share/applications", ["packaging/code-launcher.desktop"]),
     ],
 )

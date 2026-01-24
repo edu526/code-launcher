@@ -76,7 +76,7 @@ EOF
 chmod +x "$BUILD_DIR/usr/local/bin/code-launcher"
 
 # Copy .desktop file
-cp launcher/code-launcher.desktop "$BUILD_DIR/usr/share/applications/"
+cp packaging/code-launcher.desktop "$BUILD_DIR/usr/share/applications/"
 sed -i 's|Exec=.*|Exec=/usr/local/bin/code-launcher|g' "$BUILD_DIR/usr/share/applications/code-launcher.desktop"
 
 # Copy documentation
@@ -151,9 +151,9 @@ echo ""
 echo "Building .deb package..."
 
 # Create packages directory
-mkdir -p packaging/packages
+mkdir -p dist
 
-dpkg-deb --build "$BUILD_DIR" "packaging/packages/${PACKAGE_NAME}_${VERSION}_${ARCH}.deb"
+dpkg-deb --build "$BUILD_DIR" "dist/${PACKAGE_NAME}_${VERSION}_${ARCH}.deb"
 
 if [ $? -eq 0 ]; then
     print_status ".deb package created successfully"
@@ -166,14 +166,14 @@ if [ $? -eq 0 ]; then
     echo "   DEB package created successfully!"
     echo "================================================"
     echo ""
-    echo "📦 File: ${YELLOW}packaging/packages/${PACKAGE_NAME}_${VERSION}_${ARCH}.deb${NC}"
+    echo -e "📦 File: ${YELLOW}dist/${PACKAGE_NAME}_${VERSION}_${ARCH}.deb${NC}"
     echo ""
     echo "To install:"
-    echo "  ${YELLOW}sudo dpkg -i packaging/packages/${PACKAGE_NAME}_${VERSION}_${ARCH}.deb${NC}"
-    echo "  ${YELLOW}sudo apt-get install -f${NC}  (if there are missing dependencies)"
+    echo -e "  ${YELLOW}sudo dpkg -i dist/${PACKAGE_NAME}_${VERSION}_${ARCH}.deb${NC}"
+    echo -e "  ${YELLOW}sudo apt-get install -f${NC}  (if there are missing dependencies)"
     echo ""
     echo "To uninstall:"
-    echo "  ${YELLOW}sudo dpkg -r ${PACKAGE_NAME}${NC}"
+    echo -e "  ${YELLOW}sudo dpkg -r ${PACKAGE_NAME}${NC}"
     echo ""
 else
     print_error "Error creating package"

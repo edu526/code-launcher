@@ -5,6 +5,7 @@ __pycache__/
 *.so
 .Python
 build/
+dist/
 develop-eggs/
 downloads/
 eggs/
@@ -19,17 +20,22 @@ wheels/
 .installed.cfg
 *.egg
 
+# Virtual environment
+.venv/
+venv/
+ENV/
+env/
+
 # PyInstaller
 *.spec
 
 # Build artifacts
-packaging/bin/
-packaging/packages/
 packaging/build_*/
 appimagetool-x86_64.AppImage
 
 # IDE
 .vscode/
+.kiro/
 .idea/
 *.swp
 *.swo

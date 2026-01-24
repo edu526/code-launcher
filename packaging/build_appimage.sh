@@ -73,7 +73,7 @@ EOF
 chmod +x "$APPDIR/usr/bin/code-launcher"
 
 # Copy .desktop file
-cp launcher/code-launcher.desktop "$APPDIR/usr/share/applications/"
+cp packaging/code-launcher.desktop "$APPDIR/usr/share/applications/"
 sed -i 's|Exec=.*|Exec=code-launcher|g' "$APPDIR/usr/share/applications/code-launcher.desktop"
 
 # Create AppRun
@@ -89,8 +89,15 @@ EOF
 
 chmod +x "$APPDIR/AppRun"
 
-# Create icon (using system icon)
-cp launcher/code-launcher.desktop "$APPDIR/"
+# Copy icon
+if [ -f "packaging/code-launcher.svg" ]; then
+    cp packaging/code-launcher.svg "$APPDIR/code-launcher.svg"
+    cp packaging/code-launcher.svg "$APPDIR/usr/share/icons/hicolor/256x256/apps/"
+    print_status "Icon copied"
+fi
+
+# Copy .desktop file to AppDir root
+cp packaging/code-launcher.desktop "$APPDIR/"
 sed -i 's|Exec=.*|Exec=code-launcher|g' "$APPDIR/code-launcher.desktop"
 
 # Download appimagetool if it doesn't exist
@@ -104,10 +111,10 @@ fi
 echo ""
 echo "Creating AppImage..."
 
-# Create packages directory
-mkdir -p packaging/packages
+# Create dist directory
+mkdir -p dist
 
-ARCH=x86_64 ./appimagetool-x86_64.AppImage "$APPDIR" "packaging/packages/$APP_NAME-$VERSION-x86_64.AppImage"
+ARCH=x86_64 ./appimagetool-x86_64.AppImage "$APPDIR" "dist/$APP_NAME-$VERSION-x86_64.AppImage"
 
 if [ $? -eq 0 ]; then
     print_status "AppImage created successfully"
@@ -120,11 +127,11 @@ if [ $? -eq 0 ]; then
     echo "   AppImage created successfully!"
     echo "================================================"
     echo ""
-    echo "📦 File: ${YELLOW}packaging/packages/$APP_NAME-$VERSION-x86_64.AppImage${NC}"
+    echo -e "📦 File: ${YELLOW}dist/$APP_NAME-$VERSION-x86_64.AppImage${NC}"
     echo ""
     echo "To run:"
-    echo "  ${YELLOW}chmod +x packaging/packages/$APP_NAME-$VERSION-x86_64.AppImage${NC}"
-    echo "  ${YELLOW}./packaging/packages/$APP_NAME-$VERSION-x86_64.AppImage${NC}"
+    echo -e "  ${YELLOW}chmod +x dist/$APP_NAME-$VERSION-x86_64.AppImage${NC}"
+    echo -e "  ${YELLOW}./dist/$APP_NAME-$VERSION-x86_64.AppImage${NC}"
     echo ""
     echo "This file is portable and can run on any Linux distribution"
     echo ""

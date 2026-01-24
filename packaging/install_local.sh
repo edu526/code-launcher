@@ -73,17 +73,17 @@ chmod +x "$INSTALL_DIR/code-launcher"
 print_status "Launcher installed to $INSTALL_DIR/code-launcher"
 
 # Install icon
-if [ -f "launcher/code-launcher.svg" ]; then
-    cp "launcher/code-launcher.svg" "$ICON_DIR/code-launcher.svg"
-    cp "launcher/code-launcher.svg" "$PIXMAPS_DIR/code-launcher.svg"
+if [ -f "packaging/code-launcher.svg" ]; then
+    cp "packaging/code-launcher.svg" "$ICON_DIR/code-launcher.svg"
+    cp "packaging/code-launcher.svg" "$PIXMAPS_DIR/code-launcher.svg"
     print_status "Icon installed"
 fi
 
 # Create desktop entry
-if [ -f "launcher/code-launcher.desktop" ]; then
+if [ -f "packaging/code-launcher.desktop" ]; then
     sed -e "s|Exec=.*|Exec=$INSTALL_DIR/code-launcher|g" \
         -e "s|Icon=.*|Icon=code-launcher|g" \
-        launcher/code-launcher.desktop > "$DESKTOP_DIR/code-launcher.desktop"
+        packaging/code-launcher.desktop > "$DESKTOP_DIR/code-launcher.desktop"
     print_status "Desktop entry created"
 fi
 

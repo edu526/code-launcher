@@ -32,7 +32,7 @@ Finder-style project launcher for VSCode and Kiro with modern GTK interface.
 make install
 
 # Method 2: Using the script directly
-bash launcher/install.sh
+bash packaging/install_local.sh
 ```
 
 ## Installation Options
@@ -99,12 +99,14 @@ code-launcher/
 │   └── context_menu/      # Context menu system
 ├── utils/                  # Utilities
 ├── tests/                  # Test suite
-├── launcher/               # Installation files
 ├── packaging/              # Build and packaging files
 │   ├── docs/              # Build documentation
 │   ├── build_binary.sh    # Binary builder
 │   ├── build_deb.sh       # DEB builder
-│   └── build_appimage.sh  # AppImage builder
+│   ├── build_appimage.sh  # AppImage builder
+│   ├── install_local.sh   # Local installation
+│   ├── code-launcher.desktop  # Desktop entry
+│   └── code-launcher.svg  # Application icon
 ├── Makefile               # Build automation
 ├── setup.py               # Python package setup
 ├── LICENSE                # MIT License

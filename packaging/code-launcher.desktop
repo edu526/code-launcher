@@ -5,6 +5,6 @@ Comment=Quick access to VSCode and Kiro projects with categories
 Exec=code-launcher
 Icon=code-launcher
 Terminal=false
-Categories=Development;Utility;
+Categories=Development;
 StartupNotify=false
 X-GNOME-Autostart-enabled=true
