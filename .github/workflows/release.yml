@@ -60,20 +60,18 @@ jobs:
         run: |
           VERSION="${{ steps.extract.outputs.version }}"
 
-          # Configure git
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Add and commit changes
           git add setup.py packaging/build_deb.sh packaging/build_appimage.sh README.md
           git commit -m "chore: bump version to $VERSION [skip ci]"
 
-          # Push to the default branch
-          # Note: We're pushing from a detached HEAD state (tag), so we need to push to a branch
-          git push origin HEAD:refs/heads/${{ github.event.repository.default_branch }} || {
-            echo "Warning: Could not push version updates to main branch"
-            echo "This is expected if the tag is not on the main branch"
-          }
+          # Checkout the default branch before pushing
+          git fetch origin ${{ github.event.repository.default_branch }}
+          git checkout ${{ github.event.repository.default_branch }}
+          git merge HEAD@{1} --no-edit
+
+          git push origin ${{ github.event.repository.default_branch }}
 
   build-deb:
     name: Build DEB Package
