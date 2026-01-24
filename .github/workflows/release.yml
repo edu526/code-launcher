@@ -35,43 +35,43 @@ jobs:
           echo "Extracted version: $VERSION"
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
-      - name: Update version files
+      - name: Verify version consistency (optional)
         run: |
           VERSION="${{ steps.extract.outputs.version }}"
-          echo "Updating version files to $VERSION"
+          echo "================================================"
+          echo "  Version Verification"
+          echo "================================================"
+          echo "Tag version: $VERSION"
+          echo ""
 
-          # Update files using the script (without git operations in CI mode)
-          # The script will update files but not commit when CI is set
-          bash .github/scripts/update_version.sh "$VERSION"
-
-      - name: Check if version files need updating
-        id: check_changes
-        run: |
-          if git diff --quiet setup.py packaging/build_deb.sh packaging/build_appimage.sh README.md; then
-            echo "changes=false" >> $GITHUB_OUTPUT
-            echo "Version files are already up to date"
+          # Check setup.py
+          if grep -q "version=\"$VERSION\"" setup.py; then
+            echo "✅ setup.py version matches ($VERSION)"
           else
-            echo "changes=true" >> $GITHUB_OUTPUT
-            echo "Version files need to be updated"
+            echo "⚠️  setup.py version doesn't match tag"
+            echo "   (This is OK - builds will use tag version)"
           fi
 
-      - name: Commit and push version updates
-        if: steps.check_changes.outputs.changes == 'true'
-        run: |
-          VERSION="${{ steps.extract.outputs.version }}"
+          # Check build_deb.sh
+          if grep -q "VERSION=\"$VERSION\"" packaging/build_deb.sh; then
+            echo "✅ build_deb.sh version matches ($VERSION)"
+          else
+            echo "⚠️  build_deb.sh version doesn't match tag"
+            echo "   (This is OK - builds will use tag version)"
+          fi
 
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          # Check build_appimage.sh
+          if grep -q "VERSION=\"$VERSION\"" packaging/build_appimage.sh; then
+            echo "✅ build_appimage.sh version matches ($VERSION)"
+          else
+            echo "⚠️  build_appimage.sh version doesn't match tag"
+            echo "   (This is OK - builds will use tag version)"
+          fi
 
-          git add setup.py packaging/build_deb.sh packaging/build_appimage.sh README.md
-          git commit -m "chore: bump version to $VERSION [skip ci]"
-
-          # Checkout the default branch before pushing
-          git fetch origin ${{ github.event.repository.default_branch }}
-          git checkout ${{ github.event.repository.default_branch }}
-          git merge HEAD@{1} --no-edit
-
-          git push origin ${{ github.event.repository.default_branch }}
+          echo ""
+          echo "ℹ️  Note: Version mismatches are informational only."
+          echo "   Builds will always use the version from the tag: $VERSION"
+          echo "================================================"
 
   build-deb:
     name: Build DEB Package
