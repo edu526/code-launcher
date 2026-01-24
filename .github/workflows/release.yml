@@ -102,7 +102,7 @@ jobs:
             python3-gi \
             libgtk-3-dev \
             gir1.2-gtk-3.0 \
-            dpkg-deb
+            dpkg
 
       - name: Install Python dependencies
         run: |
