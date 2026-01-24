@@ -32,7 +32,7 @@ print_error() {
 }
 
 # Variables
-PACKAGE_NAME="code-project-launcher"
+PACKAGE_NAME="code-launcher"
 VERSION="1.0.0"
 ARCH="all"
 BUILD_DIR="packaging/build_deb"

@@ -4,7 +4,7 @@ VENV_DIR = .venv
 PYTHON = $(VENV_DIR)/bin/python3
 PIP = $(VENV_DIR)/bin/pip3
 
-.PHONY: help install uninstall clean binary deb appimage all venv
+.PHONY: help install uninstall clean deb appimage all venv
 
 help:
 	@echo "Code Launcher - Build options"
@@ -13,11 +13,10 @@ help:
 	@echo ""
 	@echo "Available targets:"
 	@echo "  venv       - Create virtual environment for building"
-	@echo "  install    - Install locally (quick method)"
-	@echo "  binary     - Create executable binary with PyInstaller"
+	@echo "  install    - Install locally (recommended)"
 	@echo "  deb        - Create .deb package for Debian/Ubuntu"
 	@echo "  appimage   - Create portable AppImage"
-	@echo "  all        - Create all formats"
+	@echo "  all        - Create all formats (deb + appimage)"
 	@echo "  uninstall  - Uninstall the application"
 	@echo "  clean      - Clean build files"
 
@@ -25,28 +24,22 @@ venv:
 	@echo "Creating virtual environment..."
 	@python3 -m venv $(VENV_DIR)
 	@$(PIP) install --upgrade pip
-	@$(PIP) install pyinstaller
 	@echo "Virtual environment created at $(VENV_DIR)"
 
 install:
 	@echo "Installing Code Launcher..."
 	@bash packaging/install_local.sh
 
-binary: venv
-	@echo "Creating executable binary..."
-	@bash packaging/build_binary.sh
-
 deb:
 	@echo "Creating .deb package..."
 	@bash packaging/build_deb.sh
 
-appimage:
+appimage: venv
 	@echo "Creating AppImage..."
 	@bash packaging/build_appimage.sh
 
 all: venv
 	@echo "Creating all formats..."
-	@bash packaging/build_binary.sh
 	@bash packaging/build_deb.sh
 	@bash packaging/build_appimage.sh
 	@echo ""

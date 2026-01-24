@@ -37,37 +37,37 @@ bash packaging/install_local.sh
 
 ## Installation Options
 
-### 1. Local Installation (Development)
+### 1. Local Installation (Recommended)
 ```bash
 make install
 ```
+
 - Installs in `~/.local/bin`
-- Automatic updates with Git
-- Ideal for development
+- Runs from source code
+- Ideal for development and daily use
 
-### 2. Executable Binary
-```bash
-make binary
-```
-- Creates a single executable file
-- Doesn't require Python on target system
-- File: `packaging/bin/code-launcher`
-
-### 3. DEB Package (Debian/Ubuntu)
+### 2. DEB Package (Debian/Ubuntu)
 ```bash
 make deb
 ```
+
 - Automatic dependency management
-- Easy installation: `sudo dpkg -i code-project-launcher_1.0.0_all.deb`
+- Easy installation: `sudo dpkg -i dist/code-launcher_1.0.0_all.deb`
 - Integration with package system
 
-### 4. AppImage (Portable)
+### 3. AppImage (Portable)
 ```bash
 make appimage
 ```
+
 - Works on any Linux distribution
 - No installation required
 - Portable and self-contained
+
+### 4. Create All Formats
+```bash
+make all
+```
 
 ### 5. Create All Formats
 ```bash
