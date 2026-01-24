@@ -6,6 +6,27 @@ Finder-style project launcher for VSCode and Kiro with modern GTK interface.
 ![Python](https://img.shields.io/badge/python-3.6+-blue.svg)
 ![Platform](https://img.shields.io/badge/platform-Linux-lightgrey.svg)
 
+## Table of Contents
+
+- [Features](#features)
+- [Requirements](#requirements)
+- [Installation](#installation)
+  - [Local Installation](#local-installation-recommended)
+  - [DEB Package](#deb-package-debianubuntu)
+  - [AppImage](#appimage-portable)
+- [Usage](#usage)
+  - [Starting the Application](#starting-the-application)
+  - [Navigation](#navigation)
+  - [Keyboard Shortcuts](#keyboard-shortcuts)
+- [Configuration](#configuration)
+- [Uninstallation](#uninstallation)
+- [Troubleshooting](#troubleshooting)
+- [Development](#development)
+- [Contributing](#contributing)
+- [License](#license)
+
+---
+
 ## Features
 
 - 🎯 Finder-style navigation with columns
@@ -16,7 +37,7 @@ Finder-style project launcher for VSCode and Kiro with modern GTK interface.
 - 📝 Integrated log viewer
 - ⚙️ Preferences to select default editor (Kiro/VSCode)
 - 🖱️ Context menu with quick actions
-- 🚀 Multiple installation options (local, binary, .deb, AppImage)
+- 🚀 Multiple installation options
 
 ## Requirements
 
@@ -25,144 +46,48 @@ Finder-style project launcher for VSCode and Kiro with modern GTK interface.
 - GTK 3
 - VSCode and/or Kiro installed
 
-## Quick Installation
+## Installation
 
-```bash
-# Method 1: Local installation (recommended)
-make install
+### Local Installation (Recommended)
 
-# Method 2: Using the script directly
-bash packaging/install_local.sh
-```
-
-## Installation Options
-
-### 1. Local Installation (Recommended)
 ```bash
 make install
 ```
 
+**Features:**
 - Installs in `~/.local/bin`
 - Runs from source code
 - Ideal for development and daily use
 
-### 2. DEB Package (Debian/Ubuntu)
+### DEB Package (Debian/Ubuntu)
+
 ```bash
 make deb
+sudo dpkg -i dist/code-launcher_1.0.0_all.deb
 ```
 
+**Features:**
 - Automatic dependency management
-- Easy installation: `sudo dpkg -i dist/code-launcher_1.0.0_all.deb`
 - Integration with package system
+- System-wide installation
 
-### 3. AppImage (Portable)
+### AppImage (Portable)
+
 ```bash
 make appimage
+chmod +x dist/CodeLauncher-1.0.0-x86_64.AppImage
+./dist/CodeLauncher-1.0.0-x86_64.AppImage
 ```
 
+**Features:**
 - Works on any Linux distribution
 - No installation required
 - Portable and self-contained
 
-### 4. Create All Formats
+### Build All Formats
+
 ```bash
 make all
-```
-
-### 5. Create All Formats
-```bash
-make all
-```
-
-For detailed build instructions, see [packaging/docs/BUILD_INSTRUCTIONS.md](packaging/docs/BUILD_INSTRUCTIONS.md)
-
----
-
-## Documentation
-
-- **README.md** - This file (getting started guide)
-- **QUICK_START.md** - Quick start guide
-- **LICENSE** - MIT License
-- **packaging/docs/** - Build and distribution documentation
-  - BUILD_INSTRUCTIONS.md - Detailed build instructions
-  - DISTRIBUTION_GUIDE.md - Distribution strategies
-  - QUICK_BUILD.md - Quick build reference
-
-## Project Structure
-
-```
-code-launcher/
-├── src/                    # Source code
-│   ├── core/              # Configuration management
-│   ├── ui/                # User interface
-│   ├── dialogs/           # Dialog windows
-│   └── context_menu/      # Context menu system
-├── utils/                  # Utilities
-├── tests/                  # Test suite
-├── packaging/              # Build and packaging files
-│   ├── docs/              # Build documentation
-│   ├── build_binary.sh    # Binary builder
-│   ├── build_deb.sh       # DEB builder
-│   ├── build_appimage.sh  # AppImage builder
-│   ├── install_local.sh   # Local installation
-│   ├── code-launcher.desktop  # Desktop entry
-│   └── code-launcher.svg  # Application icon
-├── Makefile               # Build automation
-├── setup.py               # Python package setup
-├── LICENSE                # MIT License
-└── README.md              # This file
-```
-
----
-
-## Configuration
-
-### Using the Graphical Interface (Recommended)
-
-1. Open the application
-2. Click the configuration button (⚙️)
-3. Select:
-   - **Edit Categories**: Manage categories and subcategories
-   - **Edit Projects**: Add or edit projects
-   - **Preferences**: Select default editor (Kiro/VSCode)
-   - **View Logs**: Check application history
-
-### Manual Configuration
-
-Configuration files are in `~/.config/code-launcher/`:
-
-#### Categories (`categories.json`)
-```json
-{
-  "Web": {
-    "icon": "internet-web-browser",
-    "description": "Web projects",
-    "subcategories": {
-      "Frontend": {
-        "icon": "code",
-        "description": "Frontend projects"
-      }
-    }
-  }
-}
-```
-
-#### Projects (`projects.json`)
-```json
-{
-  "My Project": {
-    "path": "/path/to/project",
-    "category": "Web",
-    "subcategory": "Frontend"
-  }
-}
-```
-
-#### Preferences (`preferences.json`)
-```json
-{
-  "default_editor": "kiro"
-}
 ```
 
 ## Usage
@@ -194,11 +119,61 @@ code-launcher
 
 ### Smart Search
 
-Search normalizes text, so:
+Search normalizes text automatically:
 - "eportal" finds "e-portal"
 - "myproject" finds "my_project"
 - Searches in project and category names
 - Shows all projects from found categories
+
+## Configuration
+
+### Using the Graphical Interface (Recommended)
+
+1. Open the application
+2. Click the configuration button (⚙️)
+3. Select:
+   - **Edit Categories**: Manage categories and subcategories
+   - **Edit Projects**: Add or edit projects
+   - **Preferences**: Select default editor (Kiro/VSCode)
+   - **View Logs**: Check application history
+
+### Manual Configuration
+
+Configuration files are in `~/.config/code-launcher/`:
+
+**Categories** (`categories.json`):
+```json
+{
+  "Web": {
+    "icon": "internet-web-browser",
+    "description": "Web projects",
+    "subcategories": {
+      "Frontend": {
+        "icon": "code",
+        "description": "Frontend projects"
+      }
+    }
+  }
+}
+```
+
+**Projects** (`projects.json`):
+```json
+{
+  "My Project": {
+    "path": "/path/to/project",
+    "category": "Web",
+    "subcategory": "Frontend"
+  }
+}
+```
+
+**Preferences** (`preferences.json`):
+```json
+{
+  "default_editor": "kiro"
+}
+```
 
 ## Uninstallation
 
@@ -209,10 +184,10 @@ make uninstall
 
 ### DEB Package
 ```bash
-sudo dpkg -r code-project-launcher
+sudo dpkg -r code-launcher
 ```
 
-### Binary/AppImage
+### AppImage
 Simply delete the executable file.
 
 **Note**: Configuration in `~/.config/code-launcher` is preserved.
@@ -220,6 +195,7 @@ Simply delete the executable file.
 ## Troubleshooting
 
 ### GTK dependencies not found
+
 ```bash
 # Debian/Ubuntu
 sudo apt install python3-gi gir1.2-gtk-3.0
@@ -232,6 +208,7 @@ sudo pacman -S python-gobject gtk3
 ```
 
 ### Editor doesn't open
+
 ```bash
 # Check VSCode
 which code
@@ -241,66 +218,65 @@ which kiro
 ```
 
 ### View application logs
+
 1. Open the application
 2. Configuration (⚙️) → View Logs
 3. Or manually: `~/.config/code-launcher/code-launcher.log`
 
 ### Clear configuration
+
 ```bash
 rm -rf ~/.config/code-launcher
 # The application will create new files on startup
 ```
 
-## Project Structure
-
-```
-.
-├── src/                        # Source code
-│   ├── core/                   # Configuration and core logic
-│   ├── ui/                     # User interface
-│   ├── dialogs/                # Configuration dialogs
-│   └── context_menu/           # Context menu
-├── utils/                      # Utilities
-├── tests/                      # Tests
-├── launcher/                   # Installation files
-├── Makefile                    # Build commands
-├── setup.py                    # Python package configuration
-├── build_binary.sh             # Script to create binary
-├── build_deb.sh                # Script to create .deb
-├── build_appimage.sh           # Script to create AppImage
-└── BUILD_INSTRUCTIONS.md       # Detailed instructions
-```
-
-## Configuration Files
-
-```
-~/.config/code-launcher/
-├── categories.json             # Categories and subcategories
-├── projects.json               # Projects
-├── preferences.json            # User preferences
-└── code-launcher.log           # Application logs
-```
-
 ## Development
 
-### Run from source code
+### Project Structure
+
+```
+code-launcher/
+├── src/                    # Source code
+│   ├── core/              # Configuration management
+│   ├── ui/                # User interface
+│   ├── dialogs/           # Dialog windows
+│   └── context_menu/      # Context menu system
+├── utils/                  # Utilities
+├── tests/                  # Test suite
+├── packaging/              # Build and packaging files
+│   ├── build_deb.sh       # DEB builder
+│   ├── build_appimage.sh  # AppImage builder
+│   ├── install_local.sh   # Local installation
+│   ├── code-launcher.desktop  # Desktop entry
+│   └── code-launcher.svg  # Application icon
+├── Makefile               # Build automation
+├── setup.py               # Python package setup
+├── LICENSE                # MIT License
+└── README.md              # This file
+```
+
+### Run from source
+
 ```bash
 python3 src/main.py
 ```
 
 ### Run tests
+
 ```bash
 python3 -m pytest tests/
 ```
 
 ### Clean build files
+
 ```bash
 make clean
 ```
 
 ## Contributing
 
-Contributions are welcome. Please:
+Contributions are welcome! Please:
+
 1. Fork the project
 2. Create a branch for your feature
 3. Commit your changes
