@@ -9,7 +9,7 @@ set -e
 cd "$(dirname "$0")/.."
 
 echo "================================================"
-echo "   Binary Generator - Code Project Launcher"
+echo "   Binary Generator - Code Launcher"
 echo "================================================"
 echo ""
 

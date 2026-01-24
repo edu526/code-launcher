@@ -1,9 +1,9 @@
 [Desktop Entry]
 Type=Application
-Name=Code Project Launcher
+Name=Code Launcher
 Comment=Quick access to VSCode and Kiro projects with categories
 Exec=code-launcher
-Icon=code
+Icon=code-launcher
 Terminal=false
 Categories=Development;Utility;
 StartupNotify=false

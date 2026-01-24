@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Local installation script for Code Project Launcher
+# Local installation script for Code Launcher
 # Installs from source code for development
 #
 
@@ -17,7 +17,7 @@ print_warning() { echo -e "${YELLOW}[!]${NC} $1"; }
 print_error() { echo -e "${RED}[✗]${NC} $1"; }
 
 echo "================================================"
-echo "   Code Project Launcher - Local Install"
+echo "   Code Launcher - Local Install"
 echo "================================================"
 echo ""
 
@@ -48,12 +48,16 @@ print_status "GTK dependencies found"
 INSTALL_DIR="$HOME/.local/bin"
 CONFIG_DIR="$HOME/.config/code-launcher"
 DESKTOP_DIR="$HOME/.local/share/applications"
+ICON_DIR="$HOME/.local/share/icons/hicolor/scalable/apps"
+PIXMAPS_DIR="$HOME/.local/share/pixmaps"
 PROJECT_DIR="$(pwd)"
 
 # Create directories
 mkdir -p "$INSTALL_DIR"
 mkdir -p "$CONFIG_DIR"
 mkdir -p "$DESKTOP_DIR"
+mkdir -p "$ICON_DIR"
+mkdir -p "$PIXMAPS_DIR"
 
 # Create launcher script
 cat > "$INSTALL_DIR/code-launcher" << EOF
@@ -68,9 +72,17 @@ EOF
 chmod +x "$INSTALL_DIR/code-launcher"
 print_status "Launcher installed to $INSTALL_DIR/code-launcher"
 
+# Install icon
+if [ -f "launcher/code-launcher.svg" ]; then
+    cp "launcher/code-launcher.svg" "$ICON_DIR/code-launcher.svg"
+    cp "launcher/code-launcher.svg" "$PIXMAPS_DIR/code-launcher.svg"
+    print_status "Icon installed"
+fi
+
 # Create desktop entry
 if [ -f "launcher/code-launcher.desktop" ]; then
-    sed "s|Exec=.*|Exec=$INSTALL_DIR/code-launcher|g" \
+    sed -e "s|Exec=.*|Exec=$INSTALL_DIR/code-launcher|g" \
+        -e "s|Icon=.*|Icon=code-launcher|g" \
         launcher/code-launcher.desktop > "$DESKTOP_DIR/code-launcher.desktop"
     print_status "Desktop entry created"
 fi

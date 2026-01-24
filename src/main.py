@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Code Project Launcher - Entry Point
+Code Launcher - Entry Point
 """
 
 import gi
@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 
 def main():
     """Main entry point for the application"""
-    logger.info("Starting Code Project Launcher")
+    logger.info("Starting Code Launcher")
 
     # Try to acquire the lock
     try:
@@ -47,7 +47,7 @@ def main():
         # Another instance is already running, bring it to front
         try:
             subprocess.run(
-                ['wmctrl', '-a', 'Code Project Launcher'],
+                ['wmctrl', '-a', 'Code Launcher'],
                 check=False,
                 stderr=subprocess.DEVNULL
             )

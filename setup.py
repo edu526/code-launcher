@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Setup script for Code Project Launcher
+Setup script for Code Launcher
 Creates a distributable package
 """
 

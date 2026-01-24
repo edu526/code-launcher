@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+  <!-- Main window background -->
+  <rect x="4" y="4" width="120" height="120" rx="12" fill="#3C4449" stroke="#2A2F33" stroke-width="3"/>
+
+  <!-- Window header -->
+  <rect x="4" y="4" width="120" height="28" rx="12" fill="#4A5259"/>
+  <rect x="4" y="24" width="120" height="8" fill="#4A5259"/>
+
+  <!-- Window control buttons (macOS style) -->
+  <circle cx="20" cy="18" r="6" fill="#ED6A5E"/>
+  <circle cx="38" cy="18" r="6" fill="#F4BF4F"/>
+  <circle cx="56" cy="18" r="6" fill="#61C554"/>
+
+  <!-- List items in window -->
+  <rect x="14" y="44" width="58" height="7" rx="3.5" fill="#E8E8E8" opacity="0.9"/>
+  <rect x="14" y="56" width="52" height="7" rx="3.5" fill="#E8E8E8" opacity="0.7"/>
+  <rect x="14" y="68" width="56" height="7" rx="3.5" fill="#E8E8E8" opacity="0.7"/>
+  <rect x="14" y="80" width="48" height="7" rx="3.5" fill="#E8E8E8" opacity="0.7"/>
+  <rect x="14" y="92" width="54" height="7" rx="3.5" fill="#E8E8E8" opacity="0.7"/>
+  <rect x="14" y="104" width="50" height="7" rx="3.5" fill="#E8E8E8" opacity="0.7"/>
+
+  <!-- Code badge overlay -->
+  <rect x="72" y="62" width="48" height="48" rx="10" fill="#4CAF50"/>
+  <rect x="72" y="62" width="48" height="48" rx="10" fill="#45A049" opacity="0.3"/>
+
+  <!-- Code brackets in badge -->
+  <path d="M 82 74 L 77 86 L 82 98" stroke="#FFFFFF" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <path d="M 110 74 L 115 86 L 110 98" stroke="#FFFFFF" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <line x1="104" y1="74" x2="98" y2="98" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round"/>
+</svg>

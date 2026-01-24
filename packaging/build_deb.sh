@@ -9,7 +9,7 @@ set -e
 cd "$(dirname "$0")/.."
 
 echo "================================================"
-echo "   DEB Package Generator - Code Project Launcher"
+echo "   DEB Package Generator - Code Launcher"
 echo "================================================"
 echo ""
 
@@ -126,7 +126,7 @@ if [ ! -f "$HOME/.config/code-launcher/categories.json" ]; then
 JSONEOF
 fi
 
-echo "Code Project Launcher installed successfully"
+echo "Code Launcher installed successfully"
 echo "Run 'code-launcher' to start the application"
 
 exit 0
@@ -139,7 +139,7 @@ cat > "$BUILD_DIR/DEBIAN/prerm" << 'EOF'
 #!/bin/bash
 set -e
 
-echo "Uninstalling Code Project Launcher..."
+echo "Uninstalling Code Launcher..."
 
 exit 0
 EOF

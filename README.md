@@ -1,4 +1,4 @@
-# Code Project Launcher
+# Code Launcher
 
 Finder-style project launcher for VSCode and Kiro with modern GTK interface.
 
@@ -172,7 +172,7 @@ Configuration files are in `~/.config/code-launcher/`:
 code-launcher
 
 # Or from the applications menu
-# Search for "Code Project Launcher"
+# Search for "Code Launcher"
 ```
 
 ### Navigation

@@ -1,4 +1,4 @@
-"""Context menu system for Code Project Launcher"""
+"""Context menu system for Code Launcher"""
 
 from .handler import ContextMenuHandler
 from .context_detector import (

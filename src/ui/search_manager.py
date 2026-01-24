@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Search functionality for Code Project Launcher
+Search functionality for Code Launcher
 """
 
 import gi

@@ -1,4 +1,4 @@
-"""Core business logic for Code Project Launcher"""
+"""Core business logic for Code Launcher"""
 
 from .config import ConfigManager, get_available_icons, LOCK_FILE
 

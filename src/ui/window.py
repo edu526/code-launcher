@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Main window for Code Project Launcher
+Main window for Code Launcher
 """
 
 import gi
@@ -20,7 +20,7 @@ class FinderStyleWindow(Gtk.Window):
     """Main application window"""
 
     def __init__(self):
-        super().__init__(title="Code Project Launcher")
+        super().__init__(title="Code Launcher")
         self.set_default_size(900, 500)
         self.set_position(Gtk.WindowPosition.CENTER_ALWAYS)
         self.set_border_width(0)
@@ -84,7 +84,7 @@ class FinderStyleWindow(Gtk.Window):
         """Setup header bar with buttons"""
         header = Gtk.HeaderBar()
         header.set_show_close_button(True)
-        header.set_title("Code Project Launcher")
+        header.set_title("Code Launcher")
         header.set_subtitle("Navigate and open projects by categories")
 
         # Configuration button

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Navigation and column management for Code Project Launcher
+Navigation and column management for Code Launcher
 """
 
 import gi

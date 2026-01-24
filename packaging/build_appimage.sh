@@ -9,7 +9,7 @@ set -e
 cd "$(dirname "$0")/.."
 
 echo "================================================"
-echo "   AppImage Generator - Code Project Launcher"
+echo "   AppImage Generator - Code Launcher"
 echo "================================================"
 echo ""
 

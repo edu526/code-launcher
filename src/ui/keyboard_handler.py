@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Keyboard shortcuts handler for Code Project Launcher
+Keyboard shortcuts handler for Code Launcher
 """
 
 import gi

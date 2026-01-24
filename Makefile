@@ -1,9 +1,9 @@
-# Makefile for Code Project Launcher
+# Makefile for Code Launcher
 
 .PHONY: help install uninstall clean binary deb appimage all
 
 help:
-	@echo "Code Project Launcher - Build options"
+	@echo "Code Launcher - Build options"
 	@echo ""
 	@echo "Usage: make [target]"
 	@echo ""
@@ -17,7 +17,7 @@ help:
 	@echo "  clean      - Clean build files"
 
 install:
-	@echo "Installing Code Project Launcher..."
+	@echo "Installing Code Launcher..."
 	@bash launcher/install.sh
 
 binary:
@@ -37,9 +37,11 @@ all: binary deb appimage
 	@echo "All formats created successfully"
 
 uninstall:
-	@echo "Uninstalling Code Project Launcher..."
+	@echo "Uninstalling Code Launcher..."
 	@rm -f ~/.local/bin/code-launcher
 	@rm -f ~/.local/share/applications/code-launcher.desktop
+	@rm -f ~/.local/share/icons/hicolor/scalable/apps/code-launcher.svg
+	@rm -f ~/.local/share/pixmaps/code-launcher.svg
 	@echo "Uninstalled (configuration preserved in ~/.config/code-launcher)"
 
 clean:
