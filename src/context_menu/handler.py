@@ -63,45 +63,45 @@ class ContextMenuHandler:
         logger.debug(f"Creating context menu for type: {context_type}")
 
         if context_type == ROOT_COLUMN:
-            # Root column menu: "Crear categoría" and "Agregar proyecto"
-            self._add_menu_item(menu, "Crear categoría",
+            # Root column menu: "Create category" and "Add project"
+            self._add_menu_item(menu, "Create category",
                               lambda w: create_category_action(context, self.column_browser, self.parent_window))
-            self._add_menu_item(menu, "Agregar proyecto",
+            self._add_menu_item(menu, "Add project",
                               lambda w: add_project_action(context, self.column_browser, self.parent_window))
 
         elif context_type == CHILD_COLUMN:
-            # Child column menu: "Agregar subcategoría" and "Agregar proyecto"
-            self._add_menu_item(menu, "Agregar subcategoría",
+            # Child column menu: "Add subcategory" and "Add project"
+            self._add_menu_item(menu, "Add subcategory",
                               lambda w: create_category_action(context, self.column_browser, self.parent_window))
-            self._add_menu_item(menu, "Agregar proyecto",
+            self._add_menu_item(menu, "Add project",
                               lambda w: add_project_action(context, self.column_browser, self.parent_window))
 
         elif context_type == CATEGORY_ITEM:
             # Category item menu: Multiple options
-            self._add_menu_item(menu, "Agregar subcategoría",
+            self._add_menu_item(menu, "Add subcategory",
                               lambda w: create_category_action(context, self.column_browser, self.parent_window))
-            self._add_menu_item(menu, "Agregar proyecto",
+            self._add_menu_item(menu, "Add project",
                               lambda w: add_project_action(context, self.column_browser, self.parent_window))
 
             # Separator
             menu.append(Gtk.SeparatorMenuItem())
 
-            self._add_menu_item(menu, "Renombrar",
+            self._add_menu_item(menu, "Rename",
                               lambda w: rename_category_action(context, self.column_browser, self.parent_window))
-            self._add_menu_item(menu, "Eliminar",
+            self._add_menu_item(menu, "Delete",
                               lambda w: delete_category_action(context, self.column_browser, self.parent_window))
 
         elif context_type == PROJECT_ITEM:
             # Project item menu: Open in VSCode or Kiro, and Delete
-            self._add_menu_item(menu, "Abrir en VSCode",
+            self._add_menu_item(menu, "Open in VSCode",
                               lambda w: open_vscode_action(context, self.parent_window))
-            self._add_menu_item(menu, "Abrir en Kiro",
+            self._add_menu_item(menu, "Open in Kiro",
                               lambda w: open_kiro_action(context, self.parent_window))
 
             # Separator
             menu.append(Gtk.SeparatorMenuItem())
 
-            self._add_menu_item(menu, "Eliminar proyecto",
+            self._add_menu_item(menu, "Delete project",
                               lambda w: delete_project_action(context, self.column_browser, self.parent_window))
 
         menu.show_all()

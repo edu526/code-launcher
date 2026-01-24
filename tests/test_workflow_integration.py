@@ -31,7 +31,7 @@ class TestWorkflowRootColumnCreateCategory(unittest.TestCase):
     """
     Task 9.1: Test complete workflow: root column → create category
     - Right-click on root column
-    - Select "Crear categoría"
+    - Select "Create category"
     - Verify dialog opens with no parent
     - Create category and verify it appears
     - Requirements: 2.1, 2.3
@@ -89,10 +89,10 @@ class TestWorkflowRootColumnCreateCategory(unittest.TestCase):
         self.assertIsInstance(menu, Gtk.Menu)
         menu_items = menu.get_children()
         self.assertEqual(len(menu_items), 2)
-        self.assertEqual(menu_items[0].get_label(), "Crear categoría")
-        self.assertEqual(menu_items[1].get_label(), "Agregar proyecto")
+        self.assertEqual(menu_items[0].get_label(), "Create category")
+        self.assertEqual(menu_items[1].get_label(), "Add project")
 
-        # Step 3: Select "Crear categoría" - trigger the action
+        # Step 3: Select "Create category" - trigger the action
         self.handler.create_category_action(context)
 
         # Verify dialog was called
@@ -134,7 +134,7 @@ class TestWorkflowChildColumnCreateSubcategory(unittest.TestCase):
     Task 9.2: Test complete workflow: child column → create subcategory
     - Navigate to child column
     - Right-click on column
-    - Select "Agregar subcategoría"
+    - Select "Add subcategory"
     - Verify dialog opens with correct parent
     - Create subcategory and verify it appears
     - Requirements: 3.1, 3.3, 5.3
@@ -191,10 +191,10 @@ class TestWorkflowChildColumnCreateSubcategory(unittest.TestCase):
         self.assertIsInstance(menu, Gtk.Menu)
         menu_items = menu.get_children()
         self.assertEqual(len(menu_items), 2)
-        self.assertEqual(menu_items[0].get_label(), "Agregar subcategoría")
-        self.assertEqual(menu_items[1].get_label(), "Agregar proyecto")
+        self.assertEqual(menu_items[0].get_label(), "Add subcategory")
+        self.assertEqual(menu_items[1].get_label(), "Add project")
 
-        # Step 4: Select "Agregar subcategoría"
+        # Step 4: Select "Add subcategory"
         self.handler.create_category_action(context)
 
         # Verify dialog was called
@@ -234,7 +234,7 @@ class TestWorkflowCategoryItemAddSubcategory(unittest.TestCase):
     """
     Task 9.3: Test complete workflow: category item → add subcategory
     - Right-click on category item
-    - Select "Agregar subcategoría"
+    - Select "Add subcategory"
     - Verify dialog opens with category as parent
     - Create subcategory and verify it appears
     - Requirements: 5.1, 5.2, 5.3
@@ -300,10 +300,10 @@ class TestWorkflowCategoryItemAddSubcategory(unittest.TestCase):
         self.assertIsInstance(menu, Gtk.Menu)
         menu_items = menu.get_children()
         self.assertEqual(len(menu_items), 2)
-        self.assertEqual(menu_items[0].get_label(), "Agregar subcategoría")
-        self.assertEqual(menu_items[1].get_label(), "Agregar proyecto")
+        self.assertEqual(menu_items[0].get_label(), "Add subcategory")
+        self.assertEqual(menu_items[1].get_label(), "Add project")
 
-        # Step 4: Select "Agregar subcategoría"
+        # Step 4: Select "Add subcategory"
         self.handler.create_category_action(context)
 
         # Verify dialog was called
@@ -339,7 +339,7 @@ class TestWorkflowProjectItemOpenVSCode(unittest.TestCase):
     """
     Task 9.4: Test complete workflow: project item → open in VSCode
     - Right-click on project item
-    - Select "Abrir en VSCode"
+    - Select "Open in VSCode"
     - Verify VSCode opens with correct project
     - Verify launcher window closes
     - Requirements: 4.1, 4.2, 4.3
@@ -404,9 +404,9 @@ class TestWorkflowProjectItemOpenVSCode(unittest.TestCase):
         self.assertIsInstance(menu, Gtk.Menu)
         menu_items = menu.get_children()
         self.assertEqual(len(menu_items), 1)
-        self.assertEqual(menu_items[0].get_label(), "Abrir en VSCode")
+        self.assertEqual(menu_items[0].get_label(), "Open in VSCode")
 
-        # Step 4: Select "Abrir en VSCode"
+        # Step 4: Select "Open in VSCode"
         self.handler.open_vscode_action(context)
 
         # Step 5: Verify VSCode opens with correct project
@@ -425,7 +425,7 @@ class TestWorkflowAddProjectFromContextMenu(unittest.TestCase):
     """
     Task 9.5: Test complete workflow: add project from context menu
     - Right-click on child column
-    - Select "Agregar proyecto"
+    - Select "Add project"
     - Verify dialog opens with category pre-selected
     - Add project and verify it appears
     - Requirements: 3.2, 3.4
@@ -486,10 +486,10 @@ class TestWorkflowAddProjectFromContextMenu(unittest.TestCase):
         self.assertIsInstance(menu, Gtk.Menu)
         menu_items = menu.get_children()
         self.assertEqual(len(menu_items), 2)
-        self.assertEqual(menu_items[0].get_label(), "Agregar subcategoría")
-        self.assertEqual(menu_items[1].get_label(), "Agregar proyecto")
+        self.assertEqual(menu_items[0].get_label(), "Add subcategory")
+        self.assertEqual(menu_items[1].get_label(), "Add project")
 
-        # Step 4: Select "Agregar proyecto"
+        # Step 4: Select "Add project"
         self.handler.add_project_action(context)
 
         # Verify dialog was called

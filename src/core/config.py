@@ -1,31 +1,31 @@
 #!/usr/bin/env python3
 """
-Módulo de configuración para VSCode Launcher
-Gestión de categorías, proyectos y configuración general
+Configuration module for Code Launcher
+Management of categories, projects and general configuration
 """
 
 import os
 import json
 
-# Rutas de configuración
-CONFIG_DIR = os.path.expanduser("~/.config/vscode-launcher")
-PROJECTS_FILE = os.path.expanduser("~/.config/vscode-launcher/projects.json")
-CATEGORIES_FILE = os.path.expanduser("~/.config/vscode-launcher/categories.json")
-PREFERENCES_FILE = os.path.expanduser("~/.config/vscode-launcher/preferences.json")
-LOCK_FILE = os.path.expanduser("~/.config/vscode-launcher/launcher.lock")
+# Configuration paths
+CONFIG_DIR = os.path.expanduser("~/.config/code-launcher")
+PROJECTS_FILE = os.path.expanduser("~/.config/code-launcher/projects.json")
+CATEGORIES_FILE = os.path.expanduser("~/.config/code-launcher/categories.json")
+PREFERENCES_FILE = os.path.expanduser("~/.config/code-launcher/preferences.json")
+LOCK_FILE = os.path.expanduser("~/.config/code-launcher/launcher.lock")
 
 class ConfigManager:
-    """Gestiona toda la configuración del launcher"""
+    """Manages all launcher configuration"""
 
     def __init__(self):
         self._ensure_config_dir()
 
     def _ensure_config_dir(self):
-        """Asegurar que el directorio de configuración existe"""
+        """Ensure configuration directory exists"""
         os.makedirs(CONFIG_DIR, exist_ok=True)
 
     def load_categories(self):
-        """Cargar categorías desde configuración"""
+        """Load categories from configuration"""
         default_categories = {}
 
         if os.path.exists(CATEGORIES_FILE):
@@ -36,17 +36,17 @@ class ConfigManager:
             except:
                 pass
 
-        # Guardar defaults
+        # Save defaults
         self.save_categories(default_categories)
         return default_categories
 
     def save_categories(self, categories):
-        """Guardar categorías"""
+        """Save categories"""
         with open(CATEGORIES_FILE, 'w') as f:
             json.dump(categories, f, indent=2)
 
     def load_projects(self):
-        """Cargar proyectos desde configuración"""
+        """Load projects from configuration"""
         if os.path.exists(PROJECTS_FILE):
             try:
                 with open(PROJECTS_FILE, 'r') as f:
@@ -56,7 +56,7 @@ class ConfigManager:
         return {}
 
     def save_projects(self, projects):
-        """Guardar proyectos"""
+        """Save projects"""
         with open(PROJECTS_FILE, 'w') as f:
             json.dump(projects, f, indent=2)
 
@@ -85,7 +85,7 @@ class ConfigManager:
             json.dump(preferences, f, indent=2)
 
     def get_category_hierarchy(self, categories):
-        """Obtener la jerarquía completa de categorías y subcategorías"""
+        """Get complete hierarchy of categories and subcategories"""
         hierarchy = []
 
         for cat_name, cat_info in sorted(categories.items(), key=lambda x: x[0].lower()):
@@ -99,7 +99,7 @@ class ConfigManager:
             }
             hierarchy.append(category_item)
 
-            # Añadir subcategorías si existen
+            # Add subcategories if they exist
             subcategories = cat_info.get("subcategories", {})
             for sub_name, sub_info in sorted(subcategories.items(), key=lambda x: x[0].lower()):
                 subcategory_item = {
@@ -116,10 +116,10 @@ class ConfigManager:
         return hierarchy
 
     def find_category_path(self, categories, full_path):
-        """Encontrar la información de categoría/subcategoría desde el path"""
+        """Find category/subcategory information from path"""
         parts = full_path.split(":")
 
-        if len(parts) == 2:  # category:nombre
+        if len(parts) == 2:  # category:name
             cat_name = parts[1]
             if cat_name in categories:
                 return {
@@ -145,7 +145,7 @@ class ConfigManager:
         return None
 
 def get_available_icons():
-    """Obtener lista de iconos comunes del sistema"""
+    """Get list of common system icons"""
     common_icons = [
         "folder", "user-home", "document", "text-x-generic",
         "application-x-executable", "code", "office", "network",

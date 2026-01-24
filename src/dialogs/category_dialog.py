@@ -9,7 +9,7 @@ from gi.repository import Gtk
 
 
 def show_create_category_dialog(parent, categories, on_create_callback, pre_config=None):
-    """Mostrar diálogo para crear nueva categoría o subcategoría
+    """Show dialog to create new category or subcategory
 
     Args:
         parent: Parent window
@@ -33,7 +33,7 @@ def show_create_category_dialog(parent, categories, on_create_callback, pre_conf
         hierarchy_path = pre_config.get('hierarchy_path')
 
     dialog = Gtk.Dialog(
-        title="Crear Nueva Categoría/Subcategoría",
+        title="Create New Category/Subcategory",
         transient_for=parent,
         flags=0,
         default_width=550,
@@ -52,13 +52,13 @@ def show_create_category_dialog(parent, categories, on_create_callback, pre_conf
     content.set_margin_top(10)
     content.set_margin_bottom(10)
 
-    # Tipo de creación
-    type_label = Gtk.Label(label="Tipo:")
+    # Creation type
+    type_label = Gtk.Label(label="Type:")
     content.pack_start(type_label, False, False, 0)
 
     type_combo = Gtk.ComboBoxText()
-    type_combo.append_text("Categoría principal")
-    type_combo.append_text("Subcategoría")
+    type_combo.append_text("Main category")
+    type_combo.append_text("Subcategory")
 
     # Set dialog mode based on pre-configuration
     if force_subcategory:
@@ -72,8 +72,8 @@ def show_create_category_dialog(parent, categories, on_create_callback, pre_conf
 
     content.pack_start(type_combo, False, False, 0)
 
-    # Categoría padre (solo para subcategorías)
-    parent_label = Gtk.Label(label="Categoría padre:")
+    # Parent category (only for subcategories)
+    parent_label = Gtk.Label(label="Parent category:")
     content.pack_start(parent_label, False, False, 0)
 
     parent_combo = Gtk.ComboBoxText()
@@ -115,34 +115,34 @@ def show_create_category_dialog(parent, categories, on_create_callback, pre_conf
 
     content.pack_start(parent_combo, False, False, 0)
 
-    # Nombre
-    name_label = Gtk.Label(label="Nombre:")
+    # Name
+    name_label = Gtk.Label(label="Name:")
     content.pack_start(name_label, False, False, 0)
 
     name_entry = Gtk.Entry()
-    name_entry.set_placeholder_text("Nombre de la categoría/subcategoría...")
+    name_entry.set_placeholder_text("Category/subcategory name...")
     content.pack_start(name_entry, False, False, 0)
 
-    # Icono fijo (sin selector)
+    # Fixed icon (no selector)
     selected_icon = "folder"
 
-    # Estado para validación
+    # State for validation
     state = {
         "selected_icon": "folder",
         "is_subcategory": False
     }
 
-    # Función para actualizar visibilidad de categoría padre
+    # Function to update parent category visibility
     def on_type_changed(combo):
-        is_subcategory = combo.get_active_text() == "Subcategoría"
+        is_subcategory = combo.get_active_text() == "Subcategory"
         parent_label.set_visible(is_subcategory)
         parent_combo.set_visible(is_subcategory)
         state["is_subcategory"] = is_subcategory
 
-        # Actualizar validación
+        # Update validation
         on_name_changed(None)
 
-    # Función para validar nombre
+    # Function to validate name
     def on_name_changed(entry):
         name = name_entry.get_text().strip()
         ok_button = dialog.get_widget_for_response(Gtk.ResponseType.OK)
@@ -153,7 +153,7 @@ def show_create_category_dialog(parent, categories, on_create_callback, pre_conf
             return
 
         if state["is_subcategory"]:
-            # Validar subcategoría
+            # Validate subcategory
             parent_cat = parent_combo.get_active_text()
             if (parent_cat in categories and
                 "subcategories" in categories[parent_cat] and
@@ -164,7 +164,7 @@ def show_create_category_dialog(parent, categories, on_create_callback, pre_conf
                 ok_button.set_sensitive(True)
                 name_entry.get_style_context().remove_class("error")
         else:
-            # Validar categoría principal
+            # Validate main category
             if name in categories:
                 ok_button.set_sensitive(False)
                 name_entry.get_style_context().add_class("error")
@@ -172,14 +172,14 @@ def show_create_category_dialog(parent, categories, on_create_callback, pre_conf
                 ok_button.set_sensitive(True)
                 name_entry.get_style_context().remove_class("error")
 
-    # Conectar señales
+    # Connect signals
     type_combo.connect("changed", on_type_changed)
     name_entry.connect("changed", on_name_changed)
 
     dialog.show_all()
 
-    # Estado inicial - show parent combo if force_subcategory is True
-    # IMPORTANTE: Esto debe ir DESPUÉS de show_all() para que funcione
+    # Initial state - show parent combo if force_subcategory is True
+    # IMPORTANT: This must go AFTER show_all() to work
     if force_subcategory:
         parent_label.set_visible(True)
         parent_combo.set_visible(True)
@@ -192,8 +192,8 @@ def show_create_category_dialog(parent, categories, on_create_callback, pre_conf
 
     if response == Gtk.ResponseType.OK:
         name = name_entry.get_text().strip()
-        description = ""  # Sin descripción
-        is_subcategory = type_combo.get_active_text() == "Subcategoría"
+        description = ""  # No description
+        is_subcategory = type_combo.get_active_text() == "Subcategory"
 
         if name:
             if is_subcategory:

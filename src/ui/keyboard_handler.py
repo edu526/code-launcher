@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Keyboard shortcuts handler for VSCode Project Launcher
+Keyboard shortcuts handler for Code Project Launcher
 """
 
 import gi
@@ -31,18 +31,18 @@ class KeyboardHandler:
         Returns:
             True if event was handled, False otherwise
         """
-        # ESC para cerrar
+        # ESC to close
         if event.keyval == Gdk.KEY_Escape:
             self.window.destroy()
             return True
 
-        # Enter para abrir
+        # Enter to open
         if event.keyval in (Gdk.KEY_Return, Gdk.KEY_KP_Enter):
             if self.window.selected_path:
                 self.window.on_open_clicked(None)
             return True
 
-        # Ctrl+O también abre
+        # Ctrl+O also opens
         if event.state & Gdk.ModifierType.CONTROL_MASK and event.keyval == Gdk.KEY_o:
             if self.window.selected_path:
                 self.window.on_open_clicked(None)

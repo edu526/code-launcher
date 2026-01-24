@@ -13,7 +13,7 @@ from src.core.config import CONFIG_DIR
 def show_categories_dialog(parent, categories, on_save_callback):
     """Show categories editor dialog"""
     dialog = Gtk.Dialog(
-        title="Editar Categorías",
+        title="Edit Categories",
         flags=0,
         default_width=600,
         default_height=500
@@ -33,7 +33,7 @@ def show_categories_dialog(parent, categories, on_save_callback):
     content.set_margin_top(10)
     content.set_margin_bottom(10)
 
-    label = Gtk.Label(label="Categorías (formato: nombre:icono:descripción):")
+    label = Gtk.Label(label="Categories (format: name:icon:description):")
     content.pack_start(label, False, False, 0)
 
     scrolled = Gtk.ScrolledWindow()
@@ -115,7 +115,7 @@ def show_categories_dialog(parent, categories, on_save_callback):
 def show_projects_dialog(parent, projects, on_save_callback):
     """Show projects editor dialog"""
     dialog = Gtk.Dialog(
-        title="Editar Proyectos",
+        title="Edit Projects",
         flags=0,
         default_width=600,
         default_height=500
@@ -135,7 +135,7 @@ def show_projects_dialog(parent, projects, on_save_callback):
     content.set_margin_top(10)
     content.set_margin_bottom(10)
 
-    label = Gtk.Label(label="Proyectos (formato: nombre:ruta:categoría):")
+    label = Gtk.Label(label="Projects (format: name:path:category):")
     content.pack_start(label, False, False, 0)
 
     scrolled = Gtk.ScrolledWindow()
@@ -149,10 +149,10 @@ def show_projects_dialog(parent, projects, on_save_callback):
     proj_text = ""
     for proj_name, proj_info in projects.items():
         if isinstance(proj_info, str):
-            proj_text += f"{proj_name}:{proj_info}:Otros\n"
+            proj_text += f"{proj_name}:{proj_info}:Others\n"
         else:
             path = proj_info.get("path", "")
-            category = proj_info.get("category", "Otros")
+            category = proj_info.get("category", "Others")
             proj_text += f"{proj_name}:{path}:{category}\n"
 
     buffer.set_text(proj_text.strip())
@@ -176,7 +176,7 @@ def show_projects_dialog(parent, projects, on_save_callback):
                 if len(parts) >= 2:
                     proj_name = parts[0].strip()
                     path = parts[1].strip()
-                    category = parts[2].strip() if len(parts) > 2 else "Otros"
+                    category = parts[2].strip() if len(parts) > 2 else "Others"
                     new_projects[proj_name] = {
                         "path": path,
                         "category": category
@@ -191,7 +191,7 @@ def show_projects_dialog(parent, projects, on_save_callback):
 def show_logs_dialog(parent):
     """Show logs viewer dialog"""
     dialog = Gtk.Dialog(
-        title="Ver Logs",
+        title="View Logs",
         flags=0,
         default_width=800,
         default_height=600
@@ -208,7 +208,7 @@ def show_logs_dialog(parent):
     content.set_margin_top(10)
     content.set_margin_bottom(10)
 
-    label = Gtk.Label(label="Logs de la aplicación:")
+    label = Gtk.Label(label="Application logs:")
     content.pack_start(label, False, False, 0)
 
     scrolled = Gtk.ScrolledWindow()
@@ -221,7 +221,7 @@ def show_logs_dialog(parent):
     buffer = textview.get_buffer()
 
     # Read log file
-    log_file = os.path.join(CONFIG_DIR, "vscode-launcher.log")
+    log_file = os.path.join(CONFIG_DIR, "code-launcher.log")
     logs_text = ""
     if os.path.exists(log_file):
         try:
@@ -229,9 +229,9 @@ def show_logs_dialog(parent):
                 lines = f.readlines()
                 logs_text = ''.join(lines[-500:])
         except Exception as e:
-            logs_text = f"Error al leer logs: {e}"
+            logs_text = f"Error reading logs: {e}"
     else:
-        logs_text = "No hay logs disponibles aún."
+        logs_text = "No logs available yet."
 
     buffer.set_text(logs_text)
     scrolled.add(textview)
@@ -240,15 +240,15 @@ def show_logs_dialog(parent):
     # Buttons
     buttons_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5)
 
-    refresh_btn = Gtk.Button(label="Actualizar")
+    refresh_btn = Gtk.Button(label="Refresh")
     refresh_btn.connect("clicked", lambda w: _refresh_logs(buffer, log_file))
     buttons_box.pack_start(refresh_btn, False, False, 0)
 
-    clear_btn = Gtk.Button(label="Limpiar Logs")
+    clear_btn = Gtk.Button(label="Clear Logs")
     clear_btn.connect("clicked", lambda w: _clear_logs(buffer, log_file))
     buttons_box.pack_start(clear_btn, False, False, 0)
 
-    copy_btn = Gtk.Button(label="Copiar al Portapapeles")
+    copy_btn = Gtk.Button(label="Copy to Clipboard")
     copy_btn.connect("clicked", lambda w: _copy_logs_to_clipboard(buffer))
     buttons_box.pack_start(copy_btn, False, False, 0)
 
@@ -268,9 +268,9 @@ def _refresh_logs(logs_buffer, log_file):
                 lines = f.readlines()
                 logs_text = ''.join(lines[-500:])
         except Exception as e:
-            logs_text = f"Error al leer logs: {e}"
+            logs_text = f"Error reading logs: {e}"
     else:
-        logs_text = "No hay logs disponibles aún."
+        logs_text = "No logs available yet."
 
     logs_buffer.set_text(logs_text)
 
@@ -281,9 +281,9 @@ def _clear_logs(logs_buffer, log_file):
         if os.path.exists(log_file):
             with open(log_file, 'w') as f:
                 f.write("")
-            logs_buffer.set_text("Logs limpiados.")
+            logs_buffer.set_text("Logs cleared.")
     except Exception as e:
-        logs_buffer.set_text(f"Error al limpiar logs: {e}")
+        logs_buffer.set_text(f"Error clearing logs: {e}")
 
 
 def _copy_logs_to_clipboard(logs_buffer):
@@ -299,7 +299,7 @@ def _copy_logs_to_clipboard(logs_buffer):
 def show_preferences_dialog(parent, config_manager):
     """Show preferences dialog for selecting default editor"""
     dialog = Gtk.Dialog(
-        title="Preferencias",
+        title="Preferences",
         flags=0,
         default_width=400,
         default_height=200
@@ -324,7 +324,7 @@ def show_preferences_dialog(parent, config_manager):
     current_editor = preferences.get("default_editor", "kiro")
 
     # Label
-    label = Gtk.Label(label="Selecciona el editor por defecto:")
+    label = Gtk.Label(label="Select default editor:")
     label.set_halign(Gtk.Align.START)
     content.pack_start(label, False, False, 0)
 
@@ -343,7 +343,7 @@ def show_preferences_dialog(parent, config_manager):
 
     # Info label
     info_label = Gtk.Label()
-    info_label.set_markup("<small><i>El editor seleccionado se abrirá al hacer doble clic en un proyecto.</i></small>")
+    info_label.set_markup("<small><i>The selected editor will open on double click on a project.</i></small>")
     info_label.set_halign(Gtk.Align.START)
     info_label.set_line_wrap(True)
     content.pack_start(info_label, False, False, 10)

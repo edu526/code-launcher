@@ -1,4 +1,4 @@
-"""Core business logic for VSCode Project Launcher"""
+"""Core business logic for Code Project Launcher"""
 
 from .config import ConfigManager, get_available_icons, LOCK_FILE
 

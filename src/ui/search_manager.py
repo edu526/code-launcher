@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Search functionality for VSCode Project Launcher
+Search functionality for Code Project Launcher
 """
 
 import gi
@@ -47,34 +47,34 @@ class SearchManager:
         search_text = entry.get_text().lower()
 
         if not search_text:
-            # Restaurar vista normal
+            # Restore normal view
             self.window.reload_interface()
             return
 
         # Normalize search text for flexible matching
         normalized_search = self._normalize_text(search_text)
 
-        # Buscar proyectos y categorías que coincidan
+        # Search for matching projects and categories
         matching_projects = self._find_matching_projects(normalized_search)
         matching_categories = self._find_matching_categories(normalized_search, self.window.categories)
 
-        # Para cada categoría encontrada, agregar todos sus proyectos
+        # For each found category, add all its projects
         category_projects = self._get_projects_from_categories(matching_categories)
 
-        # Combinar proyectos encontrados directamente + proyectos de categorías encontradas
-        # Usar un dict para evitar duplicados (key = project_name)
+        # Combine directly found projects + projects from found categories
+        # Use dict to avoid duplicates (key = project_name)
         all_projects = {}
 
-        # Agregar proyectos que coinciden con el nombre
+        # Add projects matching by name
         for project_name, project_path, category in matching_projects:
             all_projects[project_name] = (project_name, project_path, category)
 
-        # Agregar proyectos de las categorías encontradas
+        # Add projects from found categories
         for project_name, project_path, category in category_projects:
             if project_name not in all_projects:
                 all_projects[project_name] = (project_name, project_path, category)
 
-        # Convertir dict a lista
+        # Convert dict to list
         final_projects = list(all_projects.values())
 
         if final_projects or matching_categories:
@@ -134,7 +134,7 @@ class SearchManager:
             # Check if category name matches
             if normalized_search in normalized_cat_name:
                 cat_path = f"cat:{full_name.replace('/', ':')}"
-                matching_categories.append((cat_name, cat_path, "Categoría"))
+                matching_categories.append((cat_name, cat_path, "Category"))
 
             # Search in subcategories recursively
             subcategories = cat_info.get("subcategories", {})
@@ -190,7 +190,7 @@ class SearchManager:
                         category_projects.append((
                             project_name,
                             project_info.get("path", ""),
-                            project_info.get("category", "Otros")
+                            project_info.get("category", "Others")
                         ))
                         break  # Don't add the same project multiple times
 
@@ -204,12 +204,12 @@ class SearchManager:
             projects: List of tuples (project_name, project_path, category)
             categories: List of tuples (category_name, category_path, type)
         """
-        # Limpiar columnas existentes
+        # Clear existing columns
         for column in self.window.columns:
             self.window.columns_box.remove(column)
         self.window.columns.clear()
 
-        # Crear columna de resultados manualmente (no usar add_column)
+        # Create results column manually (don't use add_column)
         from src.ui.column_browser import ColumnBrowser
 
         results_column = ColumnBrowser(
@@ -220,19 +220,19 @@ class SearchManager:
         results_column.current_path = "search_results"
         results_column.store.clear()
 
-        # Agregar categorías primero
+        # Add categories first
         for cat_name, cat_path, cat_type in categories:
             results_column.store.append([f"📁 {cat_name}", cat_path, True, "folder"])
 
-        # Agregar proyectos
+        # Add projects
         for project_name, project_path, category in projects:
             results_column.store.append([f"📄 {project_name}", project_path, True, "code"])
 
-        # Si no hay resultados, mostrar mensaje
+        # If no results, show message
         if not projects and not categories:
-            results_column.store.append(["No se encontraron resultados", "", False, "dialog-information"])
+            results_column.store.append(["No results found", "", False, "dialog-information"])
 
-        # Agregar columna a la interfaz
+        # Add column to interface
         self.window.columns.append(results_column)
         self.window.columns_box.pack_start(results_column, True, True, 1)
         results_column.show_all()

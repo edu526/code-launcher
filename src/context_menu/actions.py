@@ -139,7 +139,7 @@ def create_category_action(context, column_browser, parent_window):
 
             except Exception as e:
                 logger.error(f"Error creating category: {e}", exc_info=True)
-                show_error_dialog(parent_window, f"Error al crear categoría: {e}")
+                show_error_dialog(parent_window, f"Error creating category: {e}")
 
         # Call show_create_category_dialog with pre_config
         show_create_category_dialog(
@@ -151,7 +151,7 @@ def create_category_action(context, column_browser, parent_window):
 
     except Exception as e:
         logger.error(f"Error in create category action: {e}", exc_info=True)
-        show_error_dialog(parent_window, f"Error al abrir diálogo de categoría: {e}")
+        show_error_dialog(parent_window, f"Error opening category dialog: {e}")
 
 
 def add_project_action(context, column_browser, parent_window):
@@ -267,7 +267,7 @@ def add_project_action(context, column_browser, parent_window):
 
             except Exception as e:
                 logger.error(f"Error adding project: {e}", exc_info=True)
-                show_error_dialog(parent_window, f"Error al agregar proyecto: {e}")
+                show_error_dialog(parent_window, f"Error adding project: {e}")
 
         # Call show_add_project_dialog with pre_config
         show_add_project_dialog(
@@ -279,7 +279,7 @@ def add_project_action(context, column_browser, parent_window):
 
     except Exception as e:
         logger.error(f"Error in add project action: {e}", exc_info=True)
-        show_error_dialog(parent_window, f"Error al abrir diálogo de proyecto: {e}")
+        show_error_dialog(parent_window, f"Error opening project dialog: {e}")
 
 
 def open_vscode_action(context, parent_window):
@@ -298,7 +298,7 @@ def open_vscode_action(context, parent_window):
 
         if not project_path:
             logger.error("No project path found in context")
-            show_error_dialog(parent_window, "Error: No se encontró la ruta del proyecto")
+            show_error_dialog(parent_window, "Error: Project path not found")
             return
 
         logger.debug(f"Opening project in VSCode: {project_path}")
@@ -313,7 +313,7 @@ def open_vscode_action(context, parent_window):
 
     except Exception as e:
         logger.error(f"Error opening project in VSCode: {e}", exc_info=True)
-        show_error_dialog(parent_window, f"Error al abrir proyecto en VSCode: {e}")
+        show_error_dialog(parent_window, f"Error opening project in VSCode: {e}")
 
 
 def open_kiro_action(context, parent_window):
@@ -332,7 +332,7 @@ def open_kiro_action(context, parent_window):
 
         if not project_path:
             logger.error("No project path found in context")
-            show_error_dialog(parent_window, "Error: No se encontró la ruta del proyecto")
+            show_error_dialog(parent_window, "Error: Project path not found")
             return
 
         logger.debug(f"Opening project in Kiro: {project_path}")
@@ -344,14 +344,14 @@ def open_kiro_action(context, parent_window):
             logger.info(f"Successfully opened project in Kiro: {project_path}")
         except FileNotFoundError:
             logger.error("Kiro command not found")
-            show_error_dialog(parent_window, "Error: Kiro no está instalado o no está en el PATH")
+            show_error_dialog(parent_window, "Error: Kiro is not installed or not in PATH")
         except Exception as e:
             logger.error(f"Error launching Kiro: {e}")
-            show_error_dialog(parent_window, f"Error al abrir Kiro: {e}")
+            show_error_dialog(parent_window, f"Error opening Kiro: {e}")
 
     except Exception as e:
         logger.error(f"Error opening project in Kiro: {e}", exc_info=True)
-        show_error_dialog(parent_window, f"Error al abrir proyecto en Kiro: {e}")
+        show_error_dialog(parent_window, f"Error opening project in Kiro: {e}")
 
 
 def show_error_dialog(parent_window, message):
@@ -465,14 +465,14 @@ def delete_category_action(context, column_browser, parent_window):
         # Build confirmation message
         message_parts = []
         if subcategories_count > 0:
-            message_parts.append(f"{subcategories_count} subcategoría(s)")
+            message_parts.append(f"{subcategories_count} subcategory(ies)")
         if len(projects_to_delete) > 0:
-            message_parts.append(f"{len(projects_to_delete)} proyecto(s)")
+            message_parts.append(f"{len(projects_to_delete)} project(s)")
 
         if message_parts:
-            secondary_text = f"Esta acción eliminará:\n- " + "\n- ".join(message_parts) + "\n\n¿Continuar?"
+            secondary_text = f"This action will delete:\n- " + "\n- ".join(message_parts) + "\n\nContinue?"
         else:
-            secondary_text = "Esta categoría está vacía. ¿Eliminarla?"
+            secondary_text = "This category is empty. Delete it?"
 
         # Confirmation dialog
         dialog = Gtk.MessageDialog(
@@ -480,7 +480,7 @@ def delete_category_action(context, column_browser, parent_window):
             flags=0,
             message_type=Gtk.MessageType.WARNING,
             buttons=Gtk.ButtonsType.YES_NO,
-            text=f"¿Eliminar categoría '{parts[-1]}'?"
+            text=f"Delete category '{parts[-1]}'?"
         )
         dialog.format_secondary_text(secondary_text)
         dialog.set_position(Gtk.WindowPosition.CENTER_ON_PARENT)
@@ -533,7 +533,7 @@ def delete_category_action(context, column_browser, parent_window):
 
     except Exception as e:
         logger.error(f"Error deleting category: {e}", exc_info=True)
-        show_error_dialog(parent_window, f"Error al eliminar categoría: {e}")
+        show_error_dialog(parent_window, f"Error deleting category: {e}")
 
 
 def rename_category_action(context, column_browser, parent_window):
@@ -560,7 +560,7 @@ def rename_category_action(context, column_browser, parent_window):
 
         # Input dialog
         dialog = Gtk.Dialog(
-            title="Renombrar Categoría",
+            title="Rename Category",
             transient_for=parent_window,
             flags=0
         )
@@ -577,7 +577,7 @@ def rename_category_action(context, column_browser, parent_window):
         content.set_margin_top(10)
         content.set_margin_bottom(10)
 
-        label = Gtk.Label(label=f"Nuevo nombre para '{old_name}':")
+        label = Gtk.Label(label=f"New name for '{old_name}':")
         content.pack_start(label, False, False, 0)
 
         entry = Gtk.Entry()
@@ -627,7 +627,7 @@ def rename_category_action(context, column_browser, parent_window):
 
     except Exception as e:
         logger.error(f"Error renaming category: {e}", exc_info=True)
-        show_error_dialog(parent_window, f"Error al renombrar categoría: {e}")
+        show_error_dialog(parent_window, f"Error renaming category: {e}")
 
 
 def delete_project_action(context, column_browser, parent_window):
@@ -662,7 +662,7 @@ def delete_project_action(context, column_browser, parent_window):
 
         if not project_name:
             logger.error(f"Project not found for path: {project_path}")
-            show_error_dialog(parent_window, "No se encontró el proyecto")
+            show_error_dialog(parent_window, "Project not found")
             return
 
         # Confirmation dialog
@@ -671,11 +671,11 @@ def delete_project_action(context, column_browser, parent_window):
             flags=0,
             message_type=Gtk.MessageType.WARNING,
             buttons=Gtk.ButtonsType.YES_NO,
-            text=f"¿Eliminar proyecto '{project_name}'?"
+            text=f"Delete project '{project_name}'?"
         )
         dialog.format_secondary_text(
-            "Esta acción solo eliminará el proyecto de la lista.\n"
-            "Los archivos en el disco NO serán eliminados."
+            "This action will only remove the project from the list.\n"
+            "Files on disk will NOT be deleted."
         )
         dialog.set_position(Gtk.WindowPosition.CENTER_ON_PARENT)
 
@@ -703,4 +703,4 @@ def delete_project_action(context, column_browser, parent_window):
 
     except Exception as e:
         logger.error(f"Error deleting project: {e}", exc_info=True)
-        show_error_dialog(parent_window, f"Error al eliminar proyecto: {e}")
+        show_error_dialog(parent_window, f"Error deleting project: {e}")

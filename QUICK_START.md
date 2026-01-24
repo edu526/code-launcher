@@ -1,93 +1,93 @@
 # Quick Start Guide
 
-## Ejecutar el Proyecto
+## Run the Project
 
-### Opción 1: Ejecutar directamente
+### Option 1: Run directly
 ```bash
 python3 src/main.py
 ```
 
-### Opción 2: Ejecutar como módulo
+### Option 2: Run as module
 ```bash
 python3 -m src.main
 ```
 
-## Verificar la Instalación
+## Verify Installation
 
-### 1. Verificar compilación
+### 1. Verify compilation
 ```bash
 python3 -m py_compile src/**/*.py
 ```
 
-### 2. Ejecutar tests
+### 2. Run tests
 ```bash
 python3 -m pytest tests/
 ```
 
-## Estructura del Proyecto
+## Project Structure
 
 ```
 src/
-├── main.py                    # Entry point - ejecutar este archivo
-├── core/                      # Lógica de negocio
-├── ui/                        # Componentes de interfaz
-├── dialogs/                   # Diálogos de usuario
-└── context_menu/              # Sistema de menú contextual
+├── main.py                    # Entry point - run this file
+├── core/                      # Business logic
+├── ui/                        # Interface components
+├── dialogs/                   # User dialogs
+└── context_menu/              # Context menu system
 ```
 
-## Archivos de Configuración
+## Configuration Files
 
-Los archivos de configuración se guardan en:
+Configuration files are saved in:
 ```
-~/.config/vscode-launcher/
-├── categories.json            # Categorías y subcategorías
-└── projects.json              # Proyectos configurados
+~/.config/code-launcher/
+├── categories.json            # Categories and subcategories
+└── projects.json              # Configured projects
 ```
 
-## Desarrollo
+## Development
 
-### Agregar un nuevo diálogo
-1. Crear archivo en `src/dialogs/`
-2. Implementar función `show_*_dialog()`
-3. Exportar en `src/dialogs/__init__.py`
-4. Importar donde sea necesario
+### Add a new dialog
+1. Create file in `src/dialogs/`
+2. Implement `show_*_dialog()` function
+3. Export in `src/dialogs/__init__.py`
+4. Import where needed
 
-### Agregar una nueva acción de menú
-1. Agregar función en `src/context_menu/actions.py`
-2. Exportar en `src/context_menu/__init__.py`
-3. Usar en `src/context_menu/handler.py`
+### Add a new menu action
+1. Add function in `src/context_menu/actions.py`
+2. Export in `src/context_menu/__init__.py`
+3. Use in `src/context_menu/handler.py`
 
-### Modificar la interfaz
-1. Editar `src/ui/column_browser.py` para el navegador
-2. Editar `src/main.py` para la ventana principal
+### Modify the interface
+1. Edit `src/ui/column_browser.py` for the browser
+2. Edit `src/main.py` for the main window
 
 ## Troubleshooting
 
 ### Error: ModuleNotFoundError
 ```bash
-# Asegúrate de estar en el directorio raíz del proyecto
-cd /path/to/vscode-launcher
+# Make sure you're in the project root directory
+cd /path/to/code-launcher
 python3 src/main.py
 ```
 
 ### Error: No module named 'gi'
 ```bash
-# Instalar PyGObject
+# Install PyGObject
 sudo apt install python3-gi python3-gi-cairo gir1.2-gtk-3.0
 ```
 
-### Error: No se encuentra VSCode
+### Error: VSCode not found
 ```bash
-# Verificar que VSCode esté instalado
+# Verify that VSCode is installed
 which code
 
-# Si no está instalado, instalar VSCode
+# If not installed, install VSCode
 # https://code.visualstudio.com/
 ```
 
-## Documentación Adicional
+## Additional Documentation
 
-- `README.md` - Documentación principal del proyecto
-- `PROJECT_STRUCTURE.md` - Estructura detallada del código
-- `REFACTORING_SUMMARY.md` - Resumen de la refactorización
-- `REFACTORING_COMPLETE.md` - Detalles completos de la refactorización
+- `README.md` - Main project documentation
+- `PROJECT_STRUCTURE.md` - Detailed code structure
+- `REFACTORING_SUMMARY.md` - Refactoring summary
+- `REFACTORING_COMPLETE.md` - Complete refactoring details

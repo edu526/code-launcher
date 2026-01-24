@@ -1,4 +1,4 @@
-"""Dialog components for VSCode Project Launcher"""
+"""Dialog components for Code Project Launcher"""
 
 from .category_dialog import show_create_category_dialog
 from .project_dialog import show_add_project_dialog

@@ -1,4 +1,4 @@
-"""UI components for VSCode Project Launcher"""
+"""UI components for Code Project Launcher"""
 
 from .column_browser import ColumnBrowser
 from .window import FinderStyleWindow

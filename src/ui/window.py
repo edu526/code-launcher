@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Main window for VSCode Project Launcher
+Main window for Code Project Launcher
 """
 
 import gi
@@ -20,78 +20,78 @@ class FinderStyleWindow(Gtk.Window):
     """Main application window"""
 
     def __init__(self):
-        super().__init__(title="VSCode Project Launcher")
+        super().__init__(title="Code Project Launcher")
         self.set_default_size(900, 500)
         self.set_position(Gtk.WindowPosition.CENTER_ALWAYS)
         self.set_border_width(0)
         self.set_type_hint(Gdk.WindowTypeHint.DIALOG)
 
-        # Configurar icono
+        # Configure icon
         try:
             self.set_icon_name("code")
         except:
             pass
 
-        # Centrar cuando se muestre
+        # Center when shown
         self.connect("show", self.on_show_center)
 
-        # Inicializar configuración
+        # Initialize configuration
         self.config = ConfigManager()
         self.categories = self.config.load_categories()
         self.projects = self.config.load_projects()
 
-        # Cargar preferencias
+        # Load preferences
         preferences = self.config.load_preferences()
         self.default_editor = preferences.get("default_editor", "kiro")
 
-        # Estado de la interfaz
+        # Interface state
         self.columns = []
         self.selected_path = None
 
-        # Inicializar managers
+        # Initialize managers
         self.search_manager = SearchManager(self)
         self.keyboard_handler = KeyboardHandler(self)
         self.navigation_manager = NavigationManager(self)
 
-        # Crear UI
+        # Create UI
         self.setup_ui()
 
-        # Atajos de teclado
+        # Keyboard shortcuts
         self.connect("key-press-event", self.keyboard_handler.on_key_press)
 
     def setup_ui(self):
         """Configure the user interface"""
-        # Layout principal
+        # Main layout
         vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
         self.add(vbox)
 
         # Header bar
         self._setup_header()
 
-        # Barra de búsqueda
+        # Search bar
         self._setup_search_bar(vbox)
 
-        # Contenedor para columnas
+        # Container for columns
         self._setup_columns_container(vbox)
 
-        # Crear primera columna con categorías
+        # Create first column with categories
         self.navigation_manager.add_column(None, "categories")
 
-        # Seleccionar la primera categoría automáticamente
+        # Automatically select the first category
         GLib.timeout_add(100, self.navigation_manager.select_first_category)
 
     def _setup_header(self):
         """Setup header bar with buttons"""
         header = Gtk.HeaderBar()
         header.set_show_close_button(True)
-        header.set_title("VSCode Project Launcher")
-        header.set_subtitle("Navega y abre proyectos por categorías")
+        header.set_title("Code Project Launcher")
+        header.set_subtitle("Navigate and open projects by categories")
 
-        # Botón de configuración
+        # Configuration button
         config_btn = Gtk.Button()
         config_icon = Gtk.Image.new_from_icon_name("emblem-system-symbolic", Gtk.IconSize.BUTTON)
         config_btn.set_image(config_icon)
-        config_btn.set_tooltip_text("Configurar categorías y proyectos")
+        config_btn.set_tooltip_text("Configure categories and projects")
         config_btn.connect("clicked", self.on_config_clicked)
         header.pack_end(config_btn)
 
@@ -106,7 +106,7 @@ class FinderStyleWindow(Gtk.Window):
         search_box.set_margin_bottom(5)
 
         self.search_entry = Gtk.SearchEntry()
-        self.search_entry.set_placeholder_text("Buscar proyectos...")
+        self.search_entry.set_placeholder_text("Search projects...")
         self.search_entry.connect("search-changed", self.search_manager.on_search_changed)
 
         search_box.pack_start(self.search_entry, True, True, 0)
@@ -158,26 +158,26 @@ class FinderStyleWindow(Gtk.Window):
         """Show configuration menu"""
         menu = Gtk.Menu()
 
-        # Opción: Editar Categorías
-        cat_item = Gtk.MenuItem(label="Editar Categorías")
+        # Option: Edit Categories
+        cat_item = Gtk.MenuItem(label="Edit Categories")
         cat_item.connect("activate", self._on_edit_categories)
         menu.append(cat_item)
 
-        # Opción: Editar Proyectos
-        proj_item = Gtk.MenuItem(label="Editar Proyectos")
+        # Option: Edit Projects
+        proj_item = Gtk.MenuItem(label="Edit Projects")
         proj_item.connect("activate", self._on_edit_projects)
         menu.append(proj_item)
 
-        # Opción: Preferencias
-        pref_item = Gtk.MenuItem(label="Preferencias")
+        # Option: Preferences
+        pref_item = Gtk.MenuItem(label="Preferences")
         pref_item.connect("activate", self._on_preferences)
         menu.append(pref_item)
 
-        # Separador
+        # Separator
         menu.append(Gtk.SeparatorMenuItem())
 
-        # Opción: Ver Logs
-        logs_item = Gtk.MenuItem(label="Ver Logs")
+        # Option: View Logs
+        logs_item = Gtk.MenuItem(label="View Logs")
         logs_item.connect("activate", self._on_view_logs)
         menu.append(logs_item)
 
@@ -223,7 +223,7 @@ class FinderStyleWindow(Gtk.Window):
 
         resolved_path = self._resolve_project_path(project_path)
         if not resolved_path:
-            print(f"Error: No se encontró el proyecto '{project_path}'")
+            print(f"Error: Project '{project_path}' not found")
             return False
 
         try:
@@ -231,7 +231,7 @@ class FinderStyleWindow(Gtk.Window):
             self.destroy()
             return True
         except Exception as e:
-            print(f"Error abriendo VSCode: {e}")
+            print(f"Error opening VSCode: {e}")
             return False
 
     def open_kiro_project(self, project_path):
@@ -241,7 +241,7 @@ class FinderStyleWindow(Gtk.Window):
 
         resolved_path = self._resolve_project_path(project_path)
         if not resolved_path:
-            print(f"Error: No se encontró el proyecto '{project_path}'")
+            print(f"Error: Project '{project_path}' not found")
             return False
 
         try:
@@ -249,10 +249,10 @@ class FinderStyleWindow(Gtk.Window):
             self.destroy()
             return True
         except FileNotFoundError:
-            print("Error: Kiro no está instalado o no está en el PATH")
+            print("Error: Kiro is not installed or not in PATH")
             return False
         except Exception as e:
-            print(f"Error abriendo Kiro: {e}")
+            print(f"Error opening Kiro: {e}")
             return False
             return False
 

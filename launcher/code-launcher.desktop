@@ -1,8 +1,8 @@
 [Desktop Entry]
 Type=Application
-Name=VSCode Launcher
-Comment=Quick access to VSCode projects with categories
-Exec=/home/eduardo/.local/bin/vscode-launcher.py
+Name=Code Project Launcher
+Comment=Quick access to VSCode and Kiro projects with categories
+Exec=code-launcher
 Icon=code
 Terminal=false
 Categories=Development;Utility;

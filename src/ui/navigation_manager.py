@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Navigation and column management for VSCode Project Launcher
+Navigation and column management for Code Project Launcher
 """
 
 import gi
@@ -71,14 +71,14 @@ class NavigationManager:
         """
         self.window.selected_path = path
 
-        # Determinar qué hacer según el tipo de selección
+        # Determine what to do based on selection type
         if path and path.startswith("cat:"):
             self._handle_category_selection(path)
         elif path and path.startswith("categories"):
-            # Se está en la vista de categorías
+            # In categories view
             pass
         else:
-            # Es un proyecto o directorio normal - no expandir más
+            # It's a normal project or directory - don't expand further
             pass
 
     def _handle_category_selection(self, hierarchy_path):
@@ -88,28 +88,28 @@ class NavigationManager:
         Args:
             hierarchy_path: Hierarchy path (e.g., "cat:Web:Frontend")
         """
-        # Analizar el path para determinar el nivel
+        # Parse the path to determine the level
         path_parts = hierarchy_path.split(":")
         if len(path_parts) < 2:
             return
 
-        # Determinar el nivel de profundidad
+        # Determine depth level
         depth_level = len(path_parts) - 1
 
-        # Eliminar columnas a la derecha del nivel seleccionado
+        # Remove columns to the right of the selected level
         target_columns_count = depth_level + 1
 
         while len(self.window.columns) > target_columns_count:
             old_column = self.window.columns.pop()
             self.window.columns_box.remove(old_column)
 
-        # Crear o recargar columna para el contenido
+        # Create or reload column for content
         if len(self.window.columns) == target_columns_count - 1:
-            # Crear nueva columna mixta
+            # Create new mixed column
             mixed_column = self.add_column(hierarchy_path, "mixed")
             mixed_column.current_path = hierarchy_path
         else:
-            # Recargar columna existente
+            # Reload existing column
             if len(self.window.columns) > 0 and len(self.window.columns) > depth_level:
                 existing_column = self.window.columns[depth_level]
                 existing_column.load_mixed_content(
@@ -121,16 +121,16 @@ class NavigationManager:
 
     def reload_interface(self):
         """Reload the entire interface"""
-        # Limpiar columnas
+        # Clear columns
         for column in self.window.columns:
             self.window.columns_box.remove(column)
         self.window.columns.clear()
 
-        # Recargar configuración
+        # Reload configuration
         self.window.categories = self.window.config.load_categories()
         self.window.projects = self.window.config.load_projects()
 
-        # Crear primera columna con categorías
+        # Create first column with categories
         self.add_column(None, "categories")
 
     def select_first_category(self):

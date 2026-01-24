@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Test para verificar que "Agregar proyecto" funciona desde un CATEGORY_ITEM
+Test to verify that "Add project" works from a CATEGORY_ITEM
 """
 
 import unittest
@@ -18,7 +18,7 @@ from context_menu import ContextMenuHandler, CATEGORY_ITEM
 
 
 class TestCategoryItemAddProject(unittest.TestCase):
-    """Test que verifica agregar proyecto desde category item"""
+    """Test that verifies adding project from category item"""
 
     def setUp(self):
         """Set up test fixtures"""
@@ -45,7 +45,7 @@ class TestCategoryItemAddProject(unittest.TestCase):
         self.handler = ContextMenuHandler(self.column_browser, self.parent_window)
 
     def test_menu_has_add_project_option(self):
-        """Test que el menú de category item tiene opción 'Agregar proyecto'"""
+        """Test that category item menu has 'Add project' option"""
         context = {
             'type': CATEGORY_ITEM,
             'hierarchy_path': 'categories',
@@ -55,20 +55,20 @@ class TestCategoryItemAddProject(unittest.TestCase):
 
         menu = self.handler.create_context_menu(context)
 
-        # Verificar que el menú tiene 2 opciones
+        # Verify that menu has 2 options
         menu_items = menu.get_children()
         self.assertEqual(len(menu_items), 2)
 
-        # Verificar las etiquetas
+        # Verify labels
         labels = [item.get_label() for item in menu_items]
-        self.assertIn("Agregar subcategoría", labels)
-        self.assertIn("Agregar proyecto", labels)
+        self.assertIn("Add subcategory", labels)
+        self.assertIn("Add project", labels)
 
-        print("✅ Menú de category item tiene 'Agregar proyecto'")
+        print("✅ Category item menu has 'Add project'")
 
     @patch('dialogs.Dialogs')
     def test_add_project_from_category_item(self, mock_dialogs):
-        """Test agregar proyecto desde category item (Web)"""
+        """Test adding project from category item (Web)"""
         context = {
             'type': CATEGORY_ITEM,
             'hierarchy_path': 'categories',
@@ -76,13 +76,13 @@ class TestCategoryItemAddProject(unittest.TestCase):
             'is_project': False
         }
 
-        # Ejecutar acción
+        # Execute action
         self.handler.add_project_action(context)
 
-        # Verificar que se llamó al diálogo
+        # Verify that dialog was called
         mock_dialogs.show_add_project_dialog.assert_called_once()
 
-        # Verificar pre_config
+        # Verify pre_config
         call_args = mock_dialogs.show_add_project_dialog.call_args
         pre_config = call_args[1]['pre_config']
 
@@ -90,11 +90,11 @@ class TestCategoryItemAddProject(unittest.TestCase):
         self.assertIsNone(pre_config['subcategory'])
         self.assertEqual(pre_config['hierarchy_path'], 'cat:Web')
 
-        print("✅ Pre-config correcto para category item 'Web'")
+        print("✅ Correct pre-config for category item 'Web'")
 
     @patch('dialogs.Dialogs')
     def test_add_project_from_nested_category_item(self, mock_dialogs):
-        """Test agregar proyecto desde category item anidado (Web:Frontend)"""
+        """Test adding project from nested category item (Web:Frontend)"""
         context = {
             'type': CATEGORY_ITEM,
             'hierarchy_path': 'cat:Web',
@@ -102,13 +102,13 @@ class TestCategoryItemAddProject(unittest.TestCase):
             'is_project': False
         }
 
-        # Ejecutar acción
+        # Execute action
         self.handler.add_project_action(context)
 
-        # Verificar que se llamó al diálogo
+        # Verify that dialog was called
         mock_dialogs.show_add_project_dialog.assert_called_once()
 
-        # Verificar pre_config
+        # Verify pre_config
         call_args = mock_dialogs.show_add_project_dialog.call_args
         pre_config = call_args[1]['pre_config']
 
@@ -116,11 +116,11 @@ class TestCategoryItemAddProject(unittest.TestCase):
         self.assertEqual(pre_config['subcategory'], 'Frontend')
         self.assertEqual(pre_config['hierarchy_path'], 'cat:Web:Frontend')
 
-        print("✅ Pre-config correcto para category item anidado 'Web:Frontend'")
+        print("✅ Correct pre-config for nested category item 'Web:Frontend'")
 
     @patch('dialogs.Dialogs')
     def test_add_project_callback_from_category_item(self, mock_dialogs):
-        """Test que el callback agrega el proyecto correctamente"""
+        """Test that callback adds project correctly"""
         context = {
             'type': CATEGORY_ITEM,
             'hierarchy_path': 'categories',
@@ -128,35 +128,35 @@ class TestCategoryItemAddProject(unittest.TestCase):
             'is_project': False
         }
 
-        # Ejecutar acción
+        # Execute action
         self.handler.add_project_action(context)
 
-        # Obtener el callback
+        # Get callback
         call_args = mock_dialogs.show_add_project_dialog.call_args
         callback = call_args[0][2]
 
-        # Simular agregar proyecto
+        # Simulate adding project
         project_info = {
             "path": "/home/user/my-web-project",
             "category": "Web"
         }
         callback("MyWebProject", project_info)
 
-        # Verificar que se agregó el proyecto
+        # Verify that project was added
         self.assertIn("MyWebProject", self.parent_window.projects)
         self.assertEqual(self.parent_window.projects["MyWebProject"]["path"], "/home/user/my-web-project")
         self.assertEqual(self.parent_window.projects["MyWebProject"]["category"], "Web")
 
-        # Verificar que se guardó y refrescó
+        # Verify that it was saved and refreshed
         self.parent_window.config.save_projects.assert_called_once()
         self.column_browser.load_mixed_content.assert_called_once()
 
-        print("✅ Proyecto agregado correctamente desde category item")
+        print("✅ Project added correctly from category item")
 
 
 if __name__ == '__main__':
     print("\n" + "="*60)
-    print("TEST: Agregar Proyecto desde Category Item")
+    print("TEST: Add Project from Category Item")
     print("="*60 + "\n")
 
     unittest.main(verbosity=2)

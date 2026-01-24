@@ -1,23 +1,23 @@
 """
-VSCode integration utilities for VSCode Launcher
+VSCode integration utilities for Code Launcher
 """
 
 import subprocess
 from .validation import is_project_path, resolve_project_path
 
 def open_project_in_vscode(selected_path, projects_config, callback_on_success=None, error_callback=None):
-    """Función unificada para abrir proyecto en VSCode"""
-    # Validar que sea un proyecto
+    """Unified function to open project in VSCode"""
+    # Validate that it's a project
     if not is_project_path(selected_path):
         if error_callback:
-            error_callback("No es un proyecto válido")
+            error_callback("Not a valid project")
         return False
 
-    # Resolver path real
+    # Resolve real path
     resolved_path = resolve_project_path(selected_path, projects_config)
     if not resolved_path:
         if error_callback:
-            error_callback(f"No se encontró el proyecto '{selected_path}'")
+            error_callback(f"Project '{selected_path}' not found")
         return False
 
     try:
@@ -27,5 +27,5 @@ def open_project_in_vscode(selected_path, projects_config, callback_on_success=N
         return True
     except Exception as e:
         if error_callback:
-            error_callback(f"Error abriendo VSCode: {e}")
+            error_callback(f"Error opening VSCode: {e}")
         return False

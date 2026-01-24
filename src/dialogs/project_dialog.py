@@ -10,7 +10,7 @@ import os
 
 
 def show_add_project_dialog(parent, categories, on_add_callback, pre_config=None):
-    """Mostrar diálogo para añadir nuevo proyecto
+    """Show dialog to add new project
 
     Args:
         parent: Parent window
@@ -37,7 +37,7 @@ def show_add_project_dialog(parent, categories, on_add_callback, pre_config=None
         disable_selection = pre_config is not None and (pre_category is not None or hierarchy_path is not None)
 
     dialog = Gtk.Dialog(
-        title="Añadir Nuevo Proyecto",
+        title="Add New Project",
         transient_for=parent,
         flags=0
     )
@@ -54,28 +54,28 @@ def show_add_project_dialog(parent, categories, on_add_callback, pre_config=None
     content.set_margin_top(10)
     content.set_margin_bottom(10)
 
-    # Nombre del proyecto
-    name_label = Gtk.Label(label="Nombre del proyecto:")
+    # Project name
+    name_label = Gtk.Label(label="Project name:")
     content.pack_start(name_label, False, False, 0)
 
     name_entry = Gtk.Entry()
-    name_entry.set_sensitive(False)  # Disabled - se llena automáticamente
-    name_entry.set_placeholder_text("Se llenará automáticamente al seleccionar carpeta")
+    name_entry.set_sensitive(False)  # Disabled - auto-filled
+    name_entry.set_placeholder_text("Will be auto-filled when selecting folder")
     content.pack_start(name_entry, False, False, 0)
 
-    # Ruta del proyecto
-    path_label = Gtk.Label(label="Ruta del proyecto:")
+    # Project path
+    path_label = Gtk.Label(label="Project path:")
     content.pack_start(path_label, False, False, 0)
 
     path_entry = Gtk.Entry()
-    path_entry.set_sensitive(False)  # Disabled - se llena automáticamente
-    path_entry.set_placeholder_text("Se llenará automáticamente al seleccionar carpeta")
+    path_entry.set_sensitive(False)  # Disabled - auto-filled
+    path_entry.set_placeholder_text("Will be auto-filled when selecting folder")
     content.pack_start(path_entry, False, False, 0)
 
-    # Botón para seleccionar carpeta
+    # Button to select folder
     def on_select_folder(button):
         folder_dialog = Gtk.FileChooserDialog(
-            title="Seleccionar Carpeta del Proyecto",
+            title="Select Project Folder",
             parent=parent,
             action=Gtk.FileChooserAction.SELECT_FOLDER
         )
@@ -98,12 +98,12 @@ def show_add_project_dialog(parent, categories, on_add_callback, pre_config=None
 
         folder_dialog.destroy()
 
-    folder_btn = Gtk.Button(label="Seleccionar Carpeta...")
+    folder_btn = Gtk.Button(label="Select Folder...")
     folder_btn.connect("clicked", on_select_folder)
     content.pack_start(folder_btn, False, False, 0)
 
-    # Categoría y Subcategoría
-    cat_label = Gtk.Label(label="Categoría:")
+    # Category and Subcategory
+    cat_label = Gtk.Label(label="Category:")
     content.pack_start(cat_label, False, False, 0)
 
     cat_combo = Gtk.ComboBoxText()
@@ -127,17 +127,17 @@ def show_add_project_dialog(parent, categories, on_add_callback, pre_config=None
 
     content.pack_start(cat_combo, False, False, 0)
 
-    subcat_label = Gtk.Label(label="Subcategoría (opcional):")
+    subcat_label = Gtk.Label(label="Subcategory (optional):")
     content.pack_start(subcat_label, False, False, 0)
 
     subcat_combo = Gtk.ComboBoxText()
-    subcat_combo.append_text("")  # Opción vacía para sin subcategoría
+    subcat_combo.append_text("")  # Empty option for no subcategory
 
     def update_subcategories(combo):
-        """Actualizar subcategorías basadas en la categoría seleccionada"""
+        """Update subcategories based on selected category"""
         cat_name = cat_combo.get_active_text()
         subcat_combo.remove_all()
-        subcat_combo.append_text("")  # Opción vacía
+        subcat_combo.append_text("")  # Empty option
 
         if cat_name and cat_name in categories:
             subcategories = categories[cat_name].get("subcategories", {})
@@ -163,7 +163,7 @@ def show_add_project_dialog(parent, categories, on_add_callback, pre_config=None
             subcat_combo.set_active(0)
 
     cat_combo.connect("changed", update_subcategories)
-    update_subcategories(None)  # Cargar subcategorías iniciales
+    update_subcategories(None)  # Load initial subcategories
 
     content.pack_start(subcat_combo, False, False, 0)
 

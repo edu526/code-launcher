@@ -236,8 +236,8 @@ class TestCreateContextMenu(unittest.TestCase):
         # Verify menu items
         labels = self._get_menu_item_labels(menu)
         self.assertEqual(len(labels), 2)
-        self.assertIn("Crear categoría", labels)
-        self.assertIn("Agregar proyecto", labels)
+        self.assertIn("Create category", labels)
+        self.assertIn("Add project", labels)
 
     def test_create_context_menu_child_column(self):
         """Test menu creation for child column context"""
@@ -256,8 +256,8 @@ class TestCreateContextMenu(unittest.TestCase):
         # Verify menu items
         labels = self._get_menu_item_labels(menu)
         self.assertEqual(len(labels), 2)
-        self.assertIn("Agregar subcategoría", labels)
-        self.assertIn("Agregar proyecto", labels)
+        self.assertIn("Add subcategory", labels)
+        self.assertIn("Add project", labels)
 
     def test_create_context_menu_category_item(self):
         """Test menu creation for category item context"""
@@ -276,8 +276,8 @@ class TestCreateContextMenu(unittest.TestCase):
         # Verify menu items
         labels = self._get_menu_item_labels(menu)
         self.assertEqual(len(labels), 2)
-        self.assertIn("Agregar subcategoría", labels)
-        self.assertIn("Agregar proyecto", labels)
+        self.assertIn("Add subcategory", labels)
+        self.assertIn("Add project", labels)
 
     def test_create_context_menu_project_item(self):
         """Test menu creation for project item context"""
@@ -296,7 +296,7 @@ class TestCreateContextMenu(unittest.TestCase):
         # Verify menu items
         labels = self._get_menu_item_labels(menu)
         self.assertEqual(len(labels), 1)
-        self.assertIn("Abrir en VSCode", labels)
+        self.assertIn("Open in VSCode", labels)
 
     def test_menu_item_callbacks_connected(self):
         """Test that menu items have callbacks connected"""
@@ -317,11 +317,11 @@ class TestCreateContextMenu(unittest.TestCase):
         items = menu.get_children()
         self.assertEqual(len(items), 2)
 
-        # Activate first item (Crear categoría)
+        # Activate first item (Create category)
         items[0].activate()
         self.handler.create_category_action.assert_called_once()
 
-        # Activate second item (Agregar proyecto)
+        # Activate second item (Add project)
         items[1].activate()
         self.handler.add_project_action.assert_called_once()
 
@@ -1069,7 +1069,7 @@ class TestOpenVSCodeAction(unittest.TestCase):
         # Verify error dialog was shown
         self.handler.show_error_dialog.assert_called_once()
         error_message = self.handler.show_error_dialog.call_args[0][0]
-        self.assertIn("No se encontró la ruta del proyecto", error_message)
+        self.assertIn("Project path not found", error_message)
 
     def test_open_vscode_action_exception_handling(self):
         """Test open_vscode_action handles exceptions gracefully"""
@@ -1096,7 +1096,7 @@ class TestOpenVSCodeAction(unittest.TestCase):
         # Verify error dialog was shown
         self.handler.show_error_dialog.assert_called_once()
         error_message = self.handler.show_error_dialog.call_args[0][0]
-        self.assertIn("Error al abrir proyecto en VSCode", error_message)
+        self.assertIn("Error opening project in VSCode", error_message)
 
     def test_open_vscode_action_with_different_project_paths(self):
         """Test open_vscode_action works with various project path formats"""
