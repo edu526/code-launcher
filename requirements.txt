@@ -1,0 +1,14 @@
+# Code Launcher Dependencies
+# Note: PyGObject requires system GTK libraries to be installed first
+
+# Core dependency
+PyGObject>=3.30.0
+
+# Testing dependencies (optional)
+pytest>=6.0.0
+hypothesis>=6.0.0
+
+# System requirements (install via package manager):
+# Debian/Ubuntu: sudo apt install python3-gi gir1.2-gtk-3.0
+# Fedora: sudo dnf install python3-gobject gtk3
+# Arch: sudo pacman -S python-gobject gtk3

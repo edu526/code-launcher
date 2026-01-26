@@ -27,8 +27,9 @@ help:
 
 venv:
 	@echo "Creating virtual environment..."
-	@python3 -m venv $(VENV_DIR)
+	@python3 -m venv --system-site-packages $(VENV_DIR)
 	@$(PIP) install --upgrade pip
+	@$(PIP) install -r requirements.txt || echo "Note: Some packages may be provided by system"
 	@echo "Virtual environment created at $(VENV_DIR)"
 
 install:

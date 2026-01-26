@@ -207,6 +207,30 @@ sudo dnf install python3-gobject gtk3
 sudo pacman -S python-gobject gtk3
 ```
 
+### "No module named 'gi'" error when running from console
+
+If you get this error when running `code-launcher` from the terminal but it works from the desktop icon:
+
+**Cause**: You have a Python virtual environment activated that doesn't have access to system GTK packages.
+
+**Solution 1** (Quick): Deactivate the venv before running:
+```bash
+deactivate  # If you have a venv active
+code-launcher
+```
+
+**Solution 2** (Permanent): Recreate your project venv with system packages access:
+```bash
+cd /path/to/code-launcher
+rm -rf .venv
+make venv  # Creates venv with --system-site-packages
+```
+
+**Solution 3** (Alternative): Run directly from source:
+```bash
+python3 src/main.py
+```
+
 ### Editor doesn't open
 
 ```bash

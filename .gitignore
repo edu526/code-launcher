@@ -5,8 +5,8 @@ __pycache__/
 *.so
 .Python
 build/
-dist/
 develop-eggs/
+dist/
 downloads/
 eggs/
 .eggs/
@@ -20,35 +20,36 @@ wheels/
 .installed.cfg
 *.egg
 
-# Virtual environment
+# Virtual Environment
 .venv/
 venv/
 ENV/
 env/
 
-# PyInstaller
-*.spec
-
-# Build artifacts
-packaging/build_*/
-appimagetool-x86_64.AppImage
-
 # IDE
 .vscode/
-.kiro/
 .idea/
 *.swp
 *.swo
 *~
 
+# Build artifacts
+packaging/build_*/
+*.deb
+*.AppImage
+appimagetool-x86_64.AppImage
+*.spec
+
+# Testing
+.pytest_cache/
+.hypothesis/
+.coverage
+htmlcov/
+
 # OS
 .DS_Store
 Thumbs.db
 
-# Config (local)
-*.json
-!*.json.example
-
-# Logs
+# Application logs
 *.log
-.hypothesis
+.kiro/specs
