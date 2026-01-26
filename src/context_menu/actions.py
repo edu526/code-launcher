@@ -337,17 +337,13 @@ def open_kiro_action(context, parent_window):
 
         logger.debug(f"Opening project in Kiro: {project_path}")
 
-        # Open Kiro with the project path
-        import subprocess
-        try:
-            subprocess.Popen(['kiro', project_path])
+        # Call parent_window.open_kiro_project(path)
+        success = parent_window.open_kiro_project(project_path)
+
+        if success:
             logger.info(f"Successfully opened project in Kiro: {project_path}")
-        except FileNotFoundError:
-            logger.error("Kiro command not found")
-            show_error_dialog(parent_window, "Error: Kiro is not installed or not in PATH")
-        except Exception as e:
-            logger.error(f"Error launching Kiro: {e}")
-            show_error_dialog(parent_window, f"Error opening Kiro: {e}")
+        else:
+            logger.warning(f"Failed to open project in Kiro: {project_path}")
 
     except Exception as e:
         logger.error(f"Error opening project in Kiro: {e}", exc_info=True)

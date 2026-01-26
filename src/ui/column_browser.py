@@ -305,7 +305,9 @@ class ColumnBrowser(Gtk.ScrolledWindow):
         self.store.clear()
         self.current_path = hierarchy_path
 
-        # Load subcategories first
+        # Collect subcategories
+        subcategories_list = []
+
         if not hierarchy_path or hierarchy_path == "categories":
             # Load subcategories of main categories
             sorted_categories = sorted(categories.items(), key=lambda x: x[0].lower())
@@ -318,7 +320,7 @@ class ColumnBrowser(Gtk.ScrolledWindow):
                     for sub_name, sub_info in sorted_subcats:
                         sub_icon = sub_info.get("icon", "folder")
                         sub_path = f"cat:{category_name}:{sub_name}"
-                        self.store.append([sub_name, sub_path, True, sub_icon])
+                        subcategories_list.append((sub_name, sub_path, sub_icon))
         else:
             # Load nested subcategories
             parts = hierarchy_path.split(":")[1:]  # Ignore first "cat"
@@ -335,11 +337,11 @@ class ColumnBrowser(Gtk.ScrolledWindow):
                             for sub_name, sub_info in sorted_subcats:
                                 sub_icon = sub_info.get("icon", "folder")
                                 full_path = f"cat:{':'.join(parts)}:{sub_name}"
-                                self.store.append([sub_name, full_path, True, sub_icon])
+                                subcategories_list.append((sub_name, full_path, sub_icon))
                     else:
                         current_categories = current_categories[part].get("subcategories", {})
 
-        # Load projects at current level
+        # Collect projects at current level
         if not hierarchy_path or hierarchy_path == "categories":
             # Projects without category
             category_name = None
@@ -353,7 +355,7 @@ class ColumnBrowser(Gtk.ScrolledWindow):
                 category_name = parts[0]
                 subcategory_path = ":".join(parts[1:])
 
-        # Filter and add projects
+        # Filter and collect projects
         category_projects = []
         for project_name, project_info in projects.items():
             if isinstance(project_info, str):
@@ -389,7 +391,11 @@ class ColumnBrowser(Gtk.ScrolledWindow):
         # Sort projects alphabetically
         category_projects.sort(key=lambda x: x[0].lower())
 
-        # Add sorted projects to store
+        # Add subcategories FIRST (prioritized at top)
+        for sub_name, sub_path, sub_icon in subcategories_list:
+            self.store.append([sub_name, sub_path, True, sub_icon])
+
+        # Then add projects (below subcategories)
         for project_name, project_path in category_projects:
             self.store.append([project_name, project_path, True, "code"])
 

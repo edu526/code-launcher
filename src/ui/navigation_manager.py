@@ -134,9 +134,43 @@ class NavigationManager:
         self.add_column(None, "categories")
 
     def select_first_category(self):
-        """Select the first category automatically"""
+        """Select the first category automatically and cascade to first subcategory if exists"""
         if self.window.columns and len(self.window.columns) > 0:
             first_column = self.window.columns[0]
             if first_column.current_path == "categories":
-                first_column.select_first_item()
+                # Select first item in first column
+                first_iter = first_column.store.get_iter_first()
+                if first_iter:
+                    selection = first_column.treeview.get_selection()
+                    selection.select_iter(first_iter)
+
+                    # Get the path of first item
+                    path = first_column.store.get_value(first_iter, 1)
+
+                    # Trigger selection to create next column
+                    self.on_column_selection(path, True)
+
+                    # Schedule cascade selection for next column
+                    GLib.timeout_add(50, self._cascade_select_first)
+        return False
+
+    def _cascade_select_first(self):
+        """Cascade selection to first item in newly created column"""
+        if len(self.window.columns) > 1:
+            second_column = self.window.columns[1]
+
+            # Check if this column has items
+            first_iter = second_column.store.get_iter_first()
+            if first_iter:
+                # Check if first item is a category (not a project)
+                path = second_column.store.get_value(first_iter, 1)
+
+                # Only auto-select if it's a subcategory (starts with "cat:")
+                if path and path.startswith("cat:"):
+                    selection = second_column.treeview.get_selection()
+                    selection.select_iter(first_iter)
+
+                    # Trigger selection to potentially create next column
+                    self.on_column_selection(path, True)
+
         return False

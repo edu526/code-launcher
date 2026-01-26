@@ -197,6 +197,31 @@ class ContextMenuHandler:
             if event.button == 3:
                 logger.debug(f"Right-click detected at ({event.x}, {event.y})")
 
+                # Get the item at the click position
+                path_info = self.column_browser.treeview.get_path_at_pos(int(event.x), int(event.y))
+
+                if path_info is not None:
+                    tree_path, column, cell_x, cell_y = path_info
+
+                    # Check if the clicked item is already selected
+                    selection = self.column_browser.treeview.get_selection()
+                    model, selected_iter = selection.get_selected()
+
+                    # Get the path of currently selected item (if any)
+                    selected_path = None
+                    if selected_iter:
+                        selected_path = model.get_path(selected_iter)
+
+                    # If clicked item is not selected, select it first
+                    if selected_path != tree_path:
+                        logger.debug(f"Selecting item at path {tree_path} before showing context menu")
+                        selection.select_path(tree_path)
+
+                        # Trigger the selection callback to update the interface
+                        iter = model.get_iter(tree_path)
+                        item_path = model.get_value(iter, 1)
+                        self.column_browser.callback(item_path, True)
+
                 # Detect the context of the click
                 context = detect_context(self.column_browser, event)
 

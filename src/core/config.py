@@ -13,6 +13,7 @@ PROJECTS_FILE = os.path.expanduser("~/.config/code-launcher/projects.json")
 CATEGORIES_FILE = os.path.expanduser("~/.config/code-launcher/categories.json")
 PREFERENCES_FILE = os.path.expanduser("~/.config/code-launcher/preferences.json")
 LOCK_FILE = os.path.expanduser("~/.config/code-launcher/launcher.lock")
+PID_FILE = os.path.expanduser("~/.config/code-launcher/launcher.pid")
 
 class ConfigManager:
     """Manages all launcher configuration"""
@@ -64,6 +65,7 @@ class ConfigManager:
         """Load user preferences with validation and defaults"""
         default_preferences = {
             "default_editor": "kiro",  # "kiro" or "vscode"
+            "close_on_open": False,  # Close launcher when opening a project
             "terminal": {
                 "preferred": None,
                 "available": {},

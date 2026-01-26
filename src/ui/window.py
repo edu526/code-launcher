@@ -27,7 +27,14 @@ class FinderStyleWindow(Gtk.Window):
         self.set_default_size(900, 500)
         self.set_position(Gtk.WindowPosition.CENTER_ALWAYS)
         self.set_border_width(0)
-        self.set_type_hint(Gdk.WindowTypeHint.DIALOG)
+
+        # Set as normal window (not dialog) to allow proper focus
+        self.set_type_hint(Gdk.WindowTypeHint.NORMAL)
+
+        # Enable focus and urgency hints
+        self.set_accept_focus(True)
+        self.set_focus_on_map(True)
+        self.set_urgency_hint(False)  # Don't use urgency by default
 
         # Configure icon
         try:
@@ -46,6 +53,7 @@ class FinderStyleWindow(Gtk.Window):
         # Load preferences
         preferences = self.config.load_preferences()
         self.default_editor = preferences.get("default_editor", "kiro")
+        self.close_on_open = preferences.get("close_on_open", False)
 
         # Interface state
         self.columns = []
@@ -238,7 +246,9 @@ class FinderStyleWindow(Gtk.Window):
 
         try:
             subprocess.Popen(['code', resolved_path])
-            self.destroy()
+            # Close launcher if preference is enabled
+            if self.close_on_open:
+                self.destroy()
             return True
         except Exception as e:
             print(f"Error opening VSCode: {e}")
@@ -256,14 +266,15 @@ class FinderStyleWindow(Gtk.Window):
 
         try:
             subprocess.Popen(['kiro', resolved_path])
-            self.destroy()
+            # Close launcher if preference is enabled
+            if self.close_on_open:
+                self.destroy()
             return True
         except FileNotFoundError:
             print("Error: Kiro is not installed or not in PATH")
             return False
         except Exception as e:
             print(f"Error opening Kiro: {e}")
-            return False
             return False
 
     def _is_project_path(self, path):

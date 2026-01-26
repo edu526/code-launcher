@@ -331,6 +331,7 @@ def show_preferences_dialog(parent, config_manager, terminal_manager=None):
     # Load current preferences
     preferences = config_manager.load_preferences()
     current_editor = preferences.get("default_editor", "kiro")
+    close_on_open = preferences.get("close_on_open", False)
 
     # Editor Preferences Section
     editor_section = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
@@ -364,6 +365,11 @@ def show_preferences_dialog(parent, config_manager, terminal_manager=None):
     editor_selection_box.pack_start(editor_combo, True, True, 0)
     editor_section.pack_start(editor_selection_box, False, False, 0)
 
+    # Close on open checkbox
+    close_on_open_check = Gtk.CheckButton(label="Close launcher when opening a project")
+    close_on_open_check.set_active(close_on_open)
+    editor_section.pack_start(close_on_open_check, False, False, 0)
+
     # Editor info label
     editor_info_label = Gtk.Label()
     editor_info_label.set_markup("<small><i>The selected editor will open on double click on a project.</i></small>")
@@ -396,6 +402,9 @@ def show_preferences_dialog(parent, config_manager, terminal_manager=None):
         selected_editor_index = editor_combo.get_active()
         selected_editor = "kiro" if selected_editor_index == 0 else "vscode"
 
+        # Get close on open preference
+        close_on_open_value = close_on_open_check.get_active()
+
         # Apply terminal selection if terminal preferences are available
         if terminal_preferences:
             try:
@@ -412,11 +421,14 @@ def show_preferences_dialog(parent, config_manager, terminal_manager=None):
         # Load current preferences AFTER applying terminal selection to get the updated values
         current_preferences = config_manager.load_preferences()
         current_preferences["default_editor"] = selected_editor
+        current_preferences["close_on_open"] = close_on_open_value
         config_manager.save_preferences(current_preferences)
 
         # Update parent window's preference
         if hasattr(parent, 'default_editor'):
             parent.default_editor = selected_editor
+        if hasattr(parent, 'close_on_open'):
+            parent.close_on_open = close_on_open_value
 
     elif response == Gtk.ResponseType.CANCEL:
         # Cancel any pending terminal selection
