@@ -112,10 +112,24 @@ code-launcher
 
 ### Keyboard Shortcuts
 
+**Within the application:**
 - `Ctrl+F`: Focus search
 - `Esc`: Exit
 - `↑/↓`: Navigate through items
 - `Enter`: Open selected project
+
+**System-wide shortcut (optional):**
+
+To launch Code Launcher with a keyboard shortcut (e.g., Super+Space):
+
+1. Open GNOME Settings → Keyboard → Keyboard Shortcuts
+2. Scroll down and click "Custom Shortcuts" → "+"
+3. Configure:
+   - **Name**: Code Launcher
+   - **Command**: `/home/YOUR_USERNAME/.local/bin/code-launcher`
+   - **Shortcut**: Press Super+Space (or your preferred combination)
+
+**Important**: Use the full path to the executable, not just `code-launcher`, as GNOME doesn't use your full user PATH.
 
 ### Smart Search
 
