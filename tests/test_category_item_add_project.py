@@ -8,13 +8,22 @@ from unittest.mock import Mock, patch
 import sys
 import os
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
 import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
 
-from context_menu import ContextMenuHandler, CATEGORY_ITEM
+from context_menu.handler import ContextMenuHandler
+from context_menu.context_detector import (
+    detect_context, get_hierarchy_info,
+    ROOT_COLUMN, CHILD_COLUMN, CATEGORY_ITEM, PROJECT_ITEM
+)
+from context_menu.actions import (
+    create_category_action, add_project_action, open_vscode_action,
+    open_kiro_action, delete_category_action, rename_category_action,
+    delete_project_action
+)
 
 
 class TestCategoryItemAddProject(unittest.TestCase):
@@ -66,7 +75,7 @@ class TestCategoryItemAddProject(unittest.TestCase):
 
         print("✅ Category item menu has 'Add project'")
 
-    @patch('dialogs.Dialogs')
+    @patch('dialogs.show_create_category_dialog')
     def test_add_project_from_category_item(self, mock_dialogs):
         """Test adding project from category item (Web)"""
         context = {
@@ -77,7 +86,7 @@ class TestCategoryItemAddProject(unittest.TestCase):
         }
 
         # Execute action
-        self.handler.add_project_action(context)
+        add_project_action(context, self.column_browser, self.parent_window)
 
         # Verify that dialog was called
         mock_dialogs.show_add_project_dialog.assert_called_once()
@@ -92,7 +101,7 @@ class TestCategoryItemAddProject(unittest.TestCase):
 
         print("✅ Correct pre-config for category item 'Web'")
 
-    @patch('dialogs.Dialogs')
+    @patch('dialogs.show_create_category_dialog')
     def test_add_project_from_nested_category_item(self, mock_dialogs):
         """Test adding project from nested category item (Web:Frontend)"""
         context = {
@@ -103,7 +112,7 @@ class TestCategoryItemAddProject(unittest.TestCase):
         }
 
         # Execute action
-        self.handler.add_project_action(context)
+        add_project_action(context, self.column_browser, self.parent_window)
 
         # Verify that dialog was called
         mock_dialogs.show_add_project_dialog.assert_called_once()
@@ -118,7 +127,7 @@ class TestCategoryItemAddProject(unittest.TestCase):
 
         print("✅ Correct pre-config for nested category item 'Web:Frontend'")
 
-    @patch('dialogs.Dialogs')
+    @patch('dialogs.show_create_category_dialog')
     def test_add_project_callback_from_category_item(self, mock_dialogs):
         """Test that callback adds project correctly"""
         context = {
@@ -129,7 +138,7 @@ class TestCategoryItemAddProject(unittest.TestCase):
         }
 
         # Execute action
-        self.handler.add_project_action(context)
+        add_project_action(context, self.column_browser, self.parent_window)
 
         # Get callback
         call_args = mock_dialogs.show_add_project_dialog.call_args

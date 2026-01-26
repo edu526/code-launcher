@@ -18,12 +18,15 @@ import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, Gdk
 
-from context_menu import (
-    ContextMenuHandler,
-    ROOT_COLUMN,
-    CHILD_COLUMN,
-    CATEGORY_ITEM,
-    PROJECT_ITEM
+from context_menu.handler import ContextMenuHandler
+from context_menu.context_detector import (
+    detect_context, get_hierarchy_info,
+    ROOT_COLUMN, CHILD_COLUMN, CATEGORY_ITEM, PROJECT_ITEM
+)
+from context_menu.actions import (
+    create_category_action, add_project_action, open_vscode_action,
+    open_kiro_action, delete_category_action, rename_category_action,
+    delete_project_action
 )
 
 
@@ -57,7 +60,7 @@ class TestWorkflowRootColumnCreateCategory(unittest.TestCase):
 
         self.handler = ContextMenuHandler(self.column_browser, self.parent_window)
 
-    @patch('dialogs.Dialogs')
+    @patch('dialogs.show_create_category_dialog')
     def test_workflow_root_column_create_category(self, mock_dialogs):
         """
         Complete workflow: Right-click root column → Create category
@@ -75,7 +78,7 @@ class TestWorkflowRootColumnCreateCategory(unittest.TestCase):
         event.time = 12345
 
         # Detect context
-        context = self.handler.detect_context(event)
+        context = detect_context(self.column_browser, event)
 
         # Verify context is root column
         self.assertEqual(context['type'], ROOT_COLUMN)
@@ -93,13 +96,13 @@ class TestWorkflowRootColumnCreateCategory(unittest.TestCase):
         self.assertEqual(menu_items[1].get_label(), "Add project")
 
         # Step 3: Select "Create category" - trigger the action
-        self.handler.create_category_action(context)
+        create_category_action(context, self.column_browser, self.parent_window)
 
         # Verify dialog was called
-        mock_dialogs.show_create_category_dialog.assert_called_once()
+        mock_dialog.assert_called_once()
 
         # Step 4: Verify dialog opens with no parent
-        call_args = mock_dialogs.show_create_category_dialog.call_args
+        call_args = mock_dialog.call_args
         pre_config = call_args[1]['pre_config']
 
         self.assertIsNone(pre_config['parent_category'],
@@ -159,7 +162,7 @@ class TestWorkflowChildColumnCreateSubcategory(unittest.TestCase):
 
         self.handler = ContextMenuHandler(self.column_browser, self.parent_window)
 
-    @patch('dialogs.Dialogs')
+    @patch('dialogs.show_create_category_dialog')
     def test_workflow_child_column_create_subcategory(self, mock_dialogs):
         """
         Complete workflow: Right-click child column → Create subcategory
@@ -177,7 +180,7 @@ class TestWorkflowChildColumnCreateSubcategory(unittest.TestCase):
         event.time = 12345
 
         # Step 2: Detect context
-        context = self.handler.detect_context(event)
+        context = detect_context(self.column_browser, event)
 
         # Verify context is child column
         self.assertEqual(context['type'], CHILD_COLUMN)
@@ -195,13 +198,13 @@ class TestWorkflowChildColumnCreateSubcategory(unittest.TestCase):
         self.assertEqual(menu_items[1].get_label(), "Add project")
 
         # Step 4: Select "Add subcategory"
-        self.handler.create_category_action(context)
+        create_category_action(context, self.column_browser, self.parent_window)
 
         # Verify dialog was called
-        mock_dialogs.show_create_category_dialog.assert_called_once()
+        mock_dialog.assert_called_once()
 
         # Step 5: Verify dialog opens with correct parent
-        call_args = mock_dialogs.show_create_category_dialog.call_args
+        call_args = mock_dialog.call_args
         pre_config = call_args[1]['pre_config']
 
         self.assertEqual(pre_config['parent_category'], 'Web',
@@ -259,7 +262,7 @@ class TestWorkflowCategoryItemAddSubcategory(unittest.TestCase):
 
         self.handler = ContextMenuHandler(self.column_browser, self.parent_window)
 
-    @patch('dialogs.Dialogs')
+    @patch('dialogs.show_create_category_dialog')
     def test_workflow_category_item_add_subcategory(self, mock_dialogs):
         """
         Complete workflow: Right-click category item → Add subcategory
@@ -286,7 +289,7 @@ class TestWorkflowCategoryItemAddSubcategory(unittest.TestCase):
         event.time = 12345
 
         # Step 2: Detect context
-        context = self.handler.detect_context(event)
+        context = detect_context(self.column_browser, event)
 
         # Verify context is category item
         self.assertEqual(context['type'], CATEGORY_ITEM)
@@ -304,13 +307,13 @@ class TestWorkflowCategoryItemAddSubcategory(unittest.TestCase):
         self.assertEqual(menu_items[1].get_label(), "Add project")
 
         # Step 4: Select "Add subcategory"
-        self.handler.create_category_action(context)
+        create_category_action(context, self.column_browser, self.parent_window)
 
         # Verify dialog was called
-        mock_dialogs.show_create_category_dialog.assert_called_once()
+        mock_dialog.assert_called_once()
 
         # Step 5: Verify dialog opens with category as parent
-        call_args = mock_dialogs.show_create_category_dialog.call_args
+        call_args = mock_dialog.call_args
         pre_config = call_args[1]['pre_config']
 
         self.assertEqual(pre_config['parent_category'], 'Mobile',
@@ -390,7 +393,7 @@ class TestWorkflowProjectItemOpenVSCode(unittest.TestCase):
         event.time = 12345
 
         # Step 2: Detect context
-        context = self.handler.detect_context(event)
+        context = detect_context(self.column_browser, event)
 
         # Verify context is project item
         self.assertEqual(context['type'], PROJECT_ITEM)
@@ -407,7 +410,7 @@ class TestWorkflowProjectItemOpenVSCode(unittest.TestCase):
         self.assertEqual(menu_items[0].get_label(), "Open in VSCode")
 
         # Step 4: Select "Open in VSCode"
-        self.handler.open_vscode_action(context)
+        open_vscode_action(context, self.parent_window)
 
         # Step 5: Verify VSCode opens with correct project
         self.parent_window.open_vscode_project.assert_called_once_with(
@@ -455,7 +458,7 @@ class TestWorkflowAddProjectFromContextMenu(unittest.TestCase):
 
         self.handler = ContextMenuHandler(self.column_browser, self.parent_window)
 
-    @patch('dialogs.Dialogs')
+    @patch('dialogs.show_create_category_dialog')
     def test_workflow_add_project_from_child_column(self, mock_dialogs):
         """
         Complete workflow: Right-click child column → Add project
@@ -473,7 +476,7 @@ class TestWorkflowAddProjectFromContextMenu(unittest.TestCase):
         event.time = 12345
 
         # Step 2: Detect context
-        context = self.handler.detect_context(event)
+        context = detect_context(self.column_browser, event)
 
         # Verify context is child column
         self.assertEqual(context['type'], CHILD_COLUMN)
@@ -490,7 +493,7 @@ class TestWorkflowAddProjectFromContextMenu(unittest.TestCase):
         self.assertEqual(menu_items[1].get_label(), "Add project")
 
         # Step 4: Select "Add project"
-        self.handler.add_project_action(context)
+        add_project_action(context, self.column_browser, self.parent_window)
 
         # Verify dialog was called
         mock_dialogs.show_add_project_dialog.assert_called_once()

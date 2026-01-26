@@ -8,12 +8,15 @@ gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, Gdk, GLib
 import os
 import subprocess
+import logging
 
 from src.core.config import ConfigManager
 from src.ui.search_manager import SearchManager
 from src.ui.keyboard_handler import KeyboardHandler
 from src.ui.navigation_manager import NavigationManager
 from utils import open_project_in_vscode
+
+logger = logging.getLogger(__name__)
 
 
 class FinderStyleWindow(Gtk.Window):
@@ -52,6 +55,10 @@ class FinderStyleWindow(Gtk.Window):
         self.search_manager = SearchManager(self)
         self.keyboard_handler = KeyboardHandler(self)
         self.navigation_manager = NavigationManager(self)
+
+        # Initialize terminal manager with graceful degradation
+        self.terminal_manager = None
+        self._initialize_terminal_manager()
 
         # Create UI
         self.setup_ui()
@@ -209,7 +216,10 @@ class FinderStyleWindow(Gtk.Window):
     def _on_preferences(self, menu_item):
         """Open preferences dialog"""
         from src.dialogs.config_dialog import show_preferences_dialog
-        show_preferences_dialog(self, self.config)
+
+        # Pass terminal manager if available, None otherwise for graceful degradation
+        terminal_manager = self.terminal_manager if self.has_terminal_support() else None
+        show_preferences_dialog(self, self.config, terminal_manager)
 
     def _on_view_logs(self, menu_item):
         """Open logs viewer dialog"""
@@ -278,3 +288,55 @@ class FinderStyleWindow(Gtk.Window):
                     return project_info.get("path", "")
 
         return None
+
+    def _initialize_terminal_manager(self):
+        """
+        Initialize terminal manager with graceful degradation.
+
+        This method attempts to initialize the terminal manager and handles
+        any failures gracefully, ensuring the application continues normal
+        operation even when terminal functionality is unavailable.
+        """
+        try:
+            logger.info("Initializing terminal manager")
+
+            # Import terminal manager
+            from utils.terminal_manager import TerminalManager
+
+            # Create terminal manager instance
+            self.terminal_manager = TerminalManager(self.config)
+
+            # Initialize terminal detection
+            self.terminal_manager.initialize()
+
+            # Check if any terminals were detected
+            if self.terminal_manager.has_available_terminals():
+                available_count = len(self.terminal_manager.get_available_terminals())
+                logger.info(f"Terminal manager initialized successfully with {available_count} terminals")
+            else:
+                logger.warning("Terminal manager initialized but no terminals detected")
+                logger.info("Terminal features will be hidden from the user interface")
+
+        except ImportError as e:
+            logger.error(f"Failed to import terminal manager: {e}")
+            logger.info("Terminal functionality will be unavailable")
+            self.terminal_manager = None
+
+        except Exception as e:
+            logger.error(f"Failed to initialize terminal manager: {e}")
+            logger.info("Terminal functionality will be unavailable, application continuing normally")
+            self.terminal_manager = None
+
+    def has_terminal_support(self):
+        """
+        Check if terminal support is available.
+
+        Returns:
+            bool: True if terminal manager is available and has terminals, False otherwise
+        """
+        try:
+            return (self.terminal_manager is not None and
+                   self.terminal_manager.has_available_terminals())
+        except Exception as e:
+            logger.error(f"Error checking terminal support: {e}")
+            return False

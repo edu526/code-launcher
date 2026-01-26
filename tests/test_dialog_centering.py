@@ -17,7 +17,9 @@ sys.modules['gi'] = MagicMock()
 sys.modules['gi.repository'] = MagicMock()
 sys.modules['gi.repository.Gtk'] = MagicMock()
 
-from dialogs import Dialogs
+from dialogs.category_dialog import show_create_category_dialog
+from dialogs.project_dialog import show_add_project_dialog
+from dialogs.config_dialog import show_categories_dialog, show_projects_dialog, show_logs_dialog, show_preferences_dialog
 
 
 class TestDialogCentering(unittest.TestCase):
@@ -37,17 +39,16 @@ class TestDialogCentering(unittest.TestCase):
 
     def test_config_dialog_is_centered(self):
         """Test that config dialog has CENTER_ON_PARENT position"""
-        with patch('dialogs.Gtk') as mock_gtk:
+        with patch('dialogs.config_dialog.Gtk') as mock_gtk:
             mock_dialog = Mock()
             mock_gtk.Dialog.return_value = mock_dialog
             mock_dialog.run.return_value = 0  # Cancel
             mock_dialog.get_content_area.return_value = Mock()
 
             # Call the dialog
-            Dialogs.show_config_dialog(
+            show_categories_dialog(
                 self.parent,
                 self.categories,
-                self.projects,
                 self.callback
             )
 
@@ -60,14 +61,14 @@ class TestDialogCentering(unittest.TestCase):
 
     def test_create_category_dialog_is_centered(self):
         """Test that create category dialog has CENTER_ON_PARENT position"""
-        with patch('dialogs.Gtk') as mock_gtk:
+        with patch('dialogs.category_dialog.Gtk') as mock_gtk:
             mock_dialog = Mock()
             mock_gtk.Dialog.return_value = mock_dialog
             mock_dialog.run.return_value = 0  # Cancel
             mock_dialog.get_content_area.return_value = Mock()
 
             # Call the dialog
-            Dialogs.show_create_category_dialog(
+            show_create_category_dialog(
                 self.parent,
                 self.categories,
                 self.callback
@@ -78,7 +79,7 @@ class TestDialogCentering(unittest.TestCase):
 
     def test_create_category_dialog_with_preconfig_is_centered(self):
         """Test that create category dialog with pre_config has CENTER_ON_PARENT position"""
-        with patch('dialogs.Gtk') as mock_gtk:
+        with patch('dialogs.category_dialog.Gtk') as mock_gtk:
             mock_dialog = Mock()
             mock_gtk.Dialog.return_value = mock_dialog
             mock_dialog.run.return_value = 0  # Cancel
@@ -91,7 +92,7 @@ class TestDialogCentering(unittest.TestCase):
             }
 
             # Call the dialog
-            Dialogs.show_create_category_dialog(
+            show_create_category_dialog(
                 self.parent,
                 self.categories,
                 self.callback,
@@ -103,14 +104,14 @@ class TestDialogCentering(unittest.TestCase):
 
     def test_add_project_dialog_is_centered(self):
         """Test that add project dialog has CENTER_ON_PARENT position"""
-        with patch('dialogs.Gtk') as mock_gtk:
+        with patch('dialogs.project_dialog.Gtk') as mock_gtk:
             mock_dialog = Mock()
             mock_gtk.Dialog.return_value = mock_dialog
             mock_dialog.run.return_value = 0  # Cancel
             mock_dialog.get_content_area.return_value = Mock()
 
             # Call the dialog
-            Dialogs.show_add_project_dialog(
+            show_add_project_dialog(
                 self.parent,
                 self.categories,
                 self.callback
@@ -121,7 +122,7 @@ class TestDialogCentering(unittest.TestCase):
 
     def test_add_project_dialog_with_preconfig_is_centered(self):
         """Test that add project dialog with pre_config has CENTER_ON_PARENT position"""
-        with patch('dialogs.Gtk') as mock_gtk:
+        with patch('dialogs.project_dialog.Gtk') as mock_gtk:
             mock_dialog = Mock()
             mock_gtk.Dialog.return_value = mock_dialog
             mock_dialog.run.return_value = 0  # Cancel
@@ -134,7 +135,7 @@ class TestDialogCentering(unittest.TestCase):
             }
 
             # Call the dialog
-            Dialogs.show_add_project_dialog(
+            show_add_project_dialog(
                 self.parent,
                 self.categories,
                 self.callback,
@@ -146,17 +147,16 @@ class TestDialogCentering(unittest.TestCase):
 
     def test_config_dialog_has_transient_for(self):
         """Test that config dialog has transient_for property set"""
-        with patch('dialogs.Gtk') as mock_gtk:
+        with patch('dialogs.config_dialog.Gtk') as mock_gtk:
             mock_dialog = Mock()
             mock_gtk.Dialog.return_value = mock_dialog
             mock_dialog.run.return_value = 0  # Cancel
             mock_dialog.get_content_area.return_value = Mock()
 
             # Call the dialog
-            Dialogs.show_config_dialog(
+            show_categories_dialog(
                 self.parent,
                 self.categories,
-                self.projects,
                 self.callback
             )
 
@@ -168,14 +168,14 @@ class TestDialogCentering(unittest.TestCase):
 
     def test_create_category_dialog_has_transient_for(self):
         """Test that create category dialog has transient_for property set"""
-        with patch('dialogs.Gtk') as mock_gtk:
+        with patch('dialogs.category_dialog.Gtk') as mock_gtk:
             mock_dialog = Mock()
             mock_gtk.Dialog.return_value = mock_dialog
             mock_dialog.run.return_value = 0  # Cancel
             mock_dialog.get_content_area.return_value = Mock()
 
             # Call the dialog
-            Dialogs.show_create_category_dialog(
+            show_create_category_dialog(
                 self.parent,
                 self.categories,
                 self.callback
@@ -189,14 +189,14 @@ class TestDialogCentering(unittest.TestCase):
 
     def test_add_project_dialog_has_transient_for(self):
         """Test that add project dialog has transient_for property set"""
-        with patch('dialogs.Gtk') as mock_gtk:
+        with patch('dialogs.project_dialog.Gtk') as mock_gtk:
             mock_dialog = Mock()
             mock_gtk.Dialog.return_value = mock_dialog
             mock_dialog.run.return_value = 0  # Cancel
             mock_dialog.get_content_area.return_value = Mock()
 
             # Call the dialog
-            Dialogs.show_add_project_dialog(
+            show_add_project_dialog(
                 self.parent,
                 self.categories,
                 self.callback

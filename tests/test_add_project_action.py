@@ -16,12 +16,15 @@ import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
 
-from context_menu import (
-    ContextMenuHandler,
-    ROOT_COLUMN,
-    CHILD_COLUMN,
-    CATEGORY_ITEM,
-    PROJECT_ITEM
+from context_menu.handler import ContextMenuHandler
+from context_menu.context_detector import (
+    detect_context, get_hierarchy_info,
+    ROOT_COLUMN, CHILD_COLUMN, CATEGORY_ITEM, PROJECT_ITEM
+)
+from context_menu.actions import (
+    create_category_action, add_project_action, open_vscode_action,
+    open_kiro_action, delete_category_action, rename_category_action,
+    delete_project_action
 )
 
 
@@ -66,7 +69,7 @@ class TestAddProjectAction(unittest.TestCase):
 
         self.handler = ContextMenuHandler(self.column_browser, self.parent_window)
 
-    @patch('dialogs.Dialogs')
+    @patch('dialogs.show_create_category_dialog')
     def test_add_project_action_root_column(self, mock_dialogs):
         """Test add_project_action for root column context"""
         context = {
@@ -77,7 +80,7 @@ class TestAddProjectAction(unittest.TestCase):
         }
 
         # Execute
-        self.handler.add_project_action(context)
+        add_project_action(context, self.column_browser, self.parent_window)
 
         # Verify Dialogs.show_add_project_dialog was called
         mock_dialogs.show_add_project_dialog.assert_called_once()
@@ -94,7 +97,7 @@ class TestAddProjectAction(unittest.TestCase):
         self.assertIsNone(pre_config['subcategory'])
         self.assertEqual(pre_config['hierarchy_path'], 'categories')
 
-    @patch('dialogs.Dialogs')
+    @patch('dialogs.show_create_category_dialog')
     def test_add_project_action_child_column_first_level(self, mock_dialogs):
         """Test add_project_action for child column at first level"""
         context = {
@@ -105,7 +108,7 @@ class TestAddProjectAction(unittest.TestCase):
         }
 
         # Execute
-        self.handler.add_project_action(context)
+        add_project_action(context, self.column_browser, self.parent_window)
 
         # Verify Dialogs.show_add_project_dialog was called
         mock_dialogs.show_add_project_dialog.assert_called_once()
@@ -117,7 +120,7 @@ class TestAddProjectAction(unittest.TestCase):
         self.assertIsNone(pre_config['subcategory'])
         self.assertEqual(pre_config['hierarchy_path'], 'cat:Web')
 
-    @patch('dialogs.Dialogs')
+    @patch('dialogs.show_create_category_dialog')
     def test_add_project_action_child_column_with_subcategory(self, mock_dialogs):
         """Test add_project_action for child column with subcategory"""
         context = {
@@ -128,7 +131,7 @@ class TestAddProjectAction(unittest.TestCase):
         }
 
         # Execute
-        self.handler.add_project_action(context)
+        add_project_action(context, self.column_browser, self.parent_window)
 
         # Verify Dialogs.show_add_project_dialog was called
         mock_dialogs.show_add_project_dialog.assert_called_once()
@@ -140,7 +143,7 @@ class TestAddProjectAction(unittest.TestCase):
         self.assertEqual(pre_config['subcategory'], 'Frontend')
         self.assertEqual(pre_config['hierarchy_path'], 'cat:Web:Frontend')
 
-    @patch('dialogs.Dialogs')
+    @patch('dialogs.show_create_category_dialog')
     def test_add_project_action_child_column_deeply_nested(self, mock_dialogs):
         """Test add_project_action for deeply nested subcategory"""
         context = {
@@ -151,7 +154,7 @@ class TestAddProjectAction(unittest.TestCase):
         }
 
         # Execute
-        self.handler.add_project_action(context)
+        add_project_action(context, self.column_browser, self.parent_window)
 
         # Verify Dialogs.show_add_project_dialog was called
         mock_dialogs.show_add_project_dialog.assert_called_once()
@@ -163,7 +166,7 @@ class TestAddProjectAction(unittest.TestCase):
         self.assertEqual(pre_config['subcategory'], 'Frontend:React:Components')
         self.assertEqual(pre_config['hierarchy_path'], 'cat:Web:Frontend:React:Components')
 
-    @patch('dialogs.Dialogs')
+    @patch('dialogs.show_create_category_dialog')
     def test_add_project_callback_adds_project(self, mock_dialogs):
         """Test that the callback adds a project correctly"""
         context = {
@@ -174,7 +177,7 @@ class TestAddProjectAction(unittest.TestCase):
         }
 
         # Execute
-        self.handler.add_project_action(context)
+        add_project_action(context, self.column_browser, self.parent_window)
 
         # Get the callback that was passed to the dialog
         call_args = mock_dialogs.show_add_project_dialog.call_args
@@ -196,7 +199,7 @@ class TestAddProjectAction(unittest.TestCase):
         self.parent_window.config.save_projects.assert_called_once_with(self.parent_window.projects)
         self.column_browser.load_mixed_content.assert_called_once()
 
-    @patch('dialogs.Dialogs')
+    @patch('dialogs.show_create_category_dialog')
     def test_add_project_callback_adds_project_with_subcategory(self, mock_dialogs):
         """Test that the callback adds a project with subcategory correctly"""
         context = {
@@ -207,7 +210,7 @@ class TestAddProjectAction(unittest.TestCase):
         }
 
         # Execute
-        self.handler.add_project_action(context)
+        add_project_action(context, self.column_browser, self.parent_window)
 
         # Get the callback that was passed to the dialog
         call_args = mock_dialogs.show_add_project_dialog.call_args
@@ -231,7 +234,7 @@ class TestAddProjectAction(unittest.TestCase):
         self.parent_window.config.save_projects.assert_called_once_with(self.parent_window.projects)
         self.column_browser.load_mixed_content.assert_called_once()
 
-    @patch('dialogs.Dialogs')
+    @patch('dialogs.show_create_category_dialog')
     def test_add_project_callback_updates_existing_project(self, mock_dialogs):
         """Test that the callback can update an existing project"""
         context = {
@@ -242,7 +245,7 @@ class TestAddProjectAction(unittest.TestCase):
         }
 
         # Execute
-        self.handler.add_project_action(context)
+        add_project_action(context, self.column_browser, self.parent_window)
 
         # Get the callback
         call_args = mock_dialogs.show_add_project_dialog.call_args
@@ -263,7 +266,7 @@ class TestAddProjectAction(unittest.TestCase):
         self.parent_window.config.save_projects.assert_called_once()
         self.column_browser.load_mixed_content.assert_called_once()
 
-    @patch('dialogs.Dialogs')
+    @patch('dialogs.show_create_category_dialog')
     def test_add_project_action_with_invalid_context_type(self, mock_dialogs):
         """Test add_project_action with invalid context type falls back gracefully"""
         context = {
@@ -274,7 +277,7 @@ class TestAddProjectAction(unittest.TestCase):
         }
 
         # Execute
-        self.handler.add_project_action(context)
+        add_project_action(context, self.column_browser, self.parent_window)
 
         # Verify Dialogs.show_add_project_dialog was called with fallback config
         mock_dialogs.show_add_project_dialog.assert_called_once()
@@ -285,7 +288,7 @@ class TestAddProjectAction(unittest.TestCase):
         self.assertIsNone(pre_config['category'])
         self.assertIsNone(pre_config['subcategory'])
 
-    @patch('dialogs.Dialogs')
+    @patch('dialogs.show_create_category_dialog')
     def test_add_project_action_with_none_hierarchy_path(self, mock_dialogs):
         """Test add_project_action handles None hierarchy_path"""
         context = {
@@ -296,7 +299,7 @@ class TestAddProjectAction(unittest.TestCase):
         }
 
         # Execute
-        self.handler.add_project_action(context)
+        add_project_action(context, self.column_browser, self.parent_window)
 
         # Verify it doesn't crash and calls the dialog
         mock_dialogs.show_add_project_dialog.assert_called_once()
@@ -308,7 +311,7 @@ class TestAddProjectAction(unittest.TestCase):
         self.assertIsNone(pre_config['subcategory'])
         self.assertIsNone(pre_config['hierarchy_path'])
 
-    @patch('dialogs.Dialogs')
+    @patch('dialogs.show_create_category_dialog')
     def test_add_project_action_from_root_column_no_preselection(self, mock_dialogs):
         """Test that root column context doesn't pre-select any category"""
         context = {
@@ -319,7 +322,7 @@ class TestAddProjectAction(unittest.TestCase):
         }
 
         # Execute
-        self.handler.add_project_action(context)
+        add_project_action(context, self.column_browser, self.parent_window)
 
         # Verify pre_config has no category pre-selected
         call_args = mock_dialogs.show_add_project_dialog.call_args
@@ -327,7 +330,7 @@ class TestAddProjectAction(unittest.TestCase):
         self.assertIsNone(pre_config['category'])
         self.assertIsNone(pre_config['subcategory'])
 
-    @patch('dialogs.Dialogs')
+    @patch('dialogs.show_create_category_dialog')
     def test_add_project_action_preserves_hierarchy_path(self, mock_dialogs):
         """Test that hierarchy_path is preserved in pre_config"""
         test_cases = [
@@ -349,7 +352,7 @@ class TestAddProjectAction(unittest.TestCase):
             }
 
             # Execute
-            self.handler.add_project_action(context)
+            add_project_action(context, self.column_browser, self.parent_window)
 
             # Verify hierarchy_path is preserved
             call_args = mock_dialogs.show_add_project_dialog.call_args
@@ -388,7 +391,7 @@ class TestAddProjectActionIntegration(unittest.TestCase):
 
         self.handler = ContextMenuHandler(self.column_browser, self.parent_window)
 
-    @patch('dialogs.Dialogs')
+    @patch('dialogs.show_create_category_dialog')
     def test_hierarchy_info_extraction_for_add_project(self, mock_dialogs):
         """Test that hierarchy info is correctly extracted for add_project_action"""
         # Test case: nested subcategory
@@ -400,7 +403,7 @@ class TestAddProjectActionIntegration(unittest.TestCase):
         }
 
         # Execute
-        self.handler.add_project_action(context)
+        add_project_action(context, self.column_browser, self.parent_window)
 
         # Verify the pre_config has correct hierarchy info
         call_args = mock_dialogs.show_add_project_dialog.call_args
@@ -409,7 +412,7 @@ class TestAddProjectActionIntegration(unittest.TestCase):
         self.assertEqual(pre_config['category'], 'Development')
         self.assertEqual(pre_config['subcategory'], 'Python')
 
-    @patch('dialogs.Dialogs')
+    @patch('dialogs.show_create_category_dialog')
     def test_add_project_from_different_hierarchy_levels(self, mock_dialogs):
         """Test add_project_action from different hierarchy levels"""
         test_cases = [
@@ -432,7 +435,7 @@ class TestAddProjectActionIntegration(unittest.TestCase):
             }
 
             # Execute
-            self.handler.add_project_action(context)
+            add_project_action(context, self.column_browser, self.parent_window)
 
             # Verify pre_config
             call_args = mock_dialogs.show_add_project_dialog.call_args

@@ -30,6 +30,12 @@ setup(
     install_requires=[
         "PyGObject>=3.30.0",
     ],
+    extras_require={
+        "test": [
+            "pytest>=6.0.0",
+            "hypothesis>=6.0.0",
+        ],
+    },
     entry_points={
         "console_scripts": [
             "code-launcher=src.main:main",

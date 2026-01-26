@@ -354,6 +354,64 @@ def open_kiro_action(context, parent_window):
         show_error_dialog(parent_window, f"Error opening project in Kiro: {e}")
 
 
+def open_in_terminal(context, parent_window):
+    """
+    Handle open in terminal action from context menu with graceful degradation.
+
+    Args:
+        context: Context dictionary with project path
+        parent_window: FinderStyleWindow instance
+    """
+    logger.info(f"Open in terminal action triggered with context: {context}")
+
+    try:
+        # Extract project path from context
+        project_path = context.get('item_path')
+
+        if not project_path:
+            logger.error("No project path found in context")
+            show_error_dialog(parent_window, "Error: Project path not found")
+            return
+
+        logger.debug(f"Opening terminal for project: {project_path}")
+
+        # Get terminal manager from parent window with graceful degradation
+        terminal_manager = getattr(parent_window, 'terminal_manager', None)
+        if not terminal_manager:
+            logger.error("Terminal manager not available")
+            show_error_dialog(parent_window, "Error: Terminal functionality not available")
+            return
+
+        # Check if any terminals are available with graceful degradation
+        try:
+            if not terminal_manager.has_available_terminals():
+                logger.error("No terminals available on system")
+                show_error_dialog(parent_window, "Error: No terminal applications found on system")
+                return
+        except Exception as e:
+            logger.error(f"Error checking terminal availability: {e}")
+            show_error_dialog(parent_window, "Error: Unable to check terminal availability")
+            return
+
+        # Launch terminal in project directory with comprehensive error handling
+        try:
+            success, error_message = terminal_manager.open_terminal(project_path)
+
+            if success:
+                logger.info(f"Successfully opened terminal for project: {project_path}")
+            else:
+                logger.warning(f"Failed to open terminal for project: {project_path} - {error_message}")
+                show_error_dialog(parent_window, f"Error: {error_message}")
+
+        except Exception as e:
+            logger.error(f"Unexpected error launching terminal: {e}")
+            show_error_dialog(parent_window, "Error: Unexpected error launching terminal")
+
+    except Exception as e:
+        logger.error(f"Error in open_in_terminal action: {e}", exc_info=True)
+        show_error_dialog(parent_window, f"Error opening terminal: {e}")
+
+
 def show_error_dialog(parent_window, message):
     """
     Display an error dialog to the user

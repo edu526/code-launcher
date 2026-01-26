@@ -61,17 +61,59 @@ class ConfigManager:
             json.dump(projects, f, indent=2)
 
     def load_preferences(self):
-        """Load user preferences"""
+        """Load user preferences with validation and defaults"""
         default_preferences = {
-            "default_editor": "kiro"  # "kiro" or "vscode"
+            "default_editor": "kiro",  # "kiro" or "vscode"
+            "terminal": {
+                "preferred": None,
+                "available": {},
+                "last_detected": None
+            }
         }
 
         if os.path.exists(PREFERENCES_FILE):
             try:
                 with open(PREFERENCES_FILE, 'r') as f:
                     loaded_prefs = json.load(f)
-                    # Merge with defaults to ensure all keys exist
-                    return {**default_preferences, **loaded_prefs}
+                    # Start with defaults and carefully merge valid values
+                    merged_prefs = {**default_preferences}
+
+                    # Validate and merge non-terminal preferences
+                    for key, value in loaded_prefs.items():
+                        if key == "terminal":
+                            # Handle terminal configuration separately with validation
+                            if isinstance(value, dict):
+                                terminal_config = {**default_preferences["terminal"]}
+
+                                # Validate each terminal configuration key
+                                if "preferred" in value:
+                                    if value["preferred"] is None or isinstance(value["preferred"], str):
+                                        terminal_config["preferred"] = value["preferred"]
+
+                                if "available" in value:
+                                    if isinstance(value["available"], dict):
+                                        # Validate that all keys and values in available are strings
+                                        valid_available = {}
+                                        for term_name, term_path in value["available"].items():
+                                            if isinstance(term_name, str) and isinstance(term_path, str):
+                                                valid_available[term_name] = term_path
+                                        terminal_config["available"] = valid_available
+
+                                if "last_detected" in value:
+                                    if value["last_detected"] is None or isinstance(value["last_detected"], str):
+                                        terminal_config["last_detected"] = value["last_detected"]
+
+                                merged_prefs["terminal"] = terminal_config
+                        elif key == "default_editor":
+                            # Validate default_editor is a string
+                            if isinstance(value, str):
+                                merged_prefs[key] = value
+                        else:
+                            # For other keys, preserve if they are basic types
+                            if isinstance(value, (str, int, bool, list)):
+                                merged_prefs[key] = value
+
+                    return merged_prefs
             except:
                 pass
 
@@ -83,6 +125,54 @@ class ConfigManager:
         """Save user preferences"""
         with open(PREFERENCES_FILE, 'w') as f:
             json.dump(preferences, f, indent=2)
+
+    def get_terminal_preferences(self):
+        """Get terminal-specific preferences"""
+        preferences = self.load_preferences()
+        return preferences.get("terminal", {
+            "preferred": None,
+            "available": {},
+            "last_detected": None
+        })
+
+    def set_terminal_preferences(self, terminal_prefs):
+        """Set terminal-specific preferences"""
+        preferences = self.load_preferences()
+        preferences["terminal"] = terminal_prefs
+        self.save_preferences(preferences)
+
+    def get_preferred_terminal(self):
+        """Get the user's preferred terminal"""
+        terminal_prefs = self.get_terminal_preferences()
+        return terminal_prefs.get("preferred")
+
+    def set_preferred_terminal(self, terminal_name):
+        """Set the user's preferred terminal"""
+        terminal_prefs = self.get_terminal_preferences()
+        terminal_prefs["preferred"] = terminal_name
+        self.set_terminal_preferences(terminal_prefs)
+
+    def get_available_terminals(self):
+        """Get the list of available terminals"""
+        terminal_prefs = self.get_terminal_preferences()
+        return terminal_prefs.get("available", {})
+
+    def set_available_terminals(self, available_terminals):
+        """Set the list of available terminals"""
+        terminal_prefs = self.get_terminal_preferences()
+        terminal_prefs["available"] = available_terminals
+        self.set_terminal_preferences(terminal_prefs)
+
+    def get_last_detected_time(self):
+        """Get the last terminal detection timestamp"""
+        terminal_prefs = self.get_terminal_preferences()
+        return terminal_prefs.get("last_detected")
+
+    def set_last_detected_time(self, timestamp):
+        """Set the last terminal detection timestamp"""
+        terminal_prefs = self.get_terminal_preferences()
+        terminal_prefs["last_detected"] = timestamp
+        self.set_terminal_preferences(terminal_prefs)
 
     def get_category_hierarchy(self, categories):
         """Get complete hierarchy of categories and subcategories"""

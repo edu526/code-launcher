@@ -264,6 +264,19 @@ python3 src/main.py
 ### Run tests
 
 ```bash
+# Run all tests (requires GTK dependencies)
+make test
+
+# Run core tests only (no GTK required)
+make test-core
+
+# Run GTK-dependent tests only
+make test-gtk
+
+# Run property-based tests only
+make test-pbt
+
+# Or use pytest directly
 python3 -m pytest tests/
 ```
 

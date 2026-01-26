@@ -16,7 +16,9 @@ sys.modules['gi'] = MagicMock()
 sys.modules['gi.repository'] = MagicMock()
 sys.modules['gi.repository.Gtk'] = MagicMock()
 
-from dialogs import Dialogs
+from dialogs.category_dialog import show_create_category_dialog
+from dialogs.project_dialog import show_add_project_dialog
+from dialogs.config_dialog import show_categories_dialog
 
 
 class TestShowCreateCategoryDialog(unittest.TestCase):
@@ -34,14 +36,14 @@ class TestShowCreateCategoryDialog(unittest.TestCase):
     def test_signature_accepts_pre_config(self):
         """Test that the function accepts pre_config parameter"""
         # This test verifies the signature change
-        with patch('dialogs.Gtk') as mock_gtk:
+        with patch('dialogs.category_dialog.Gtk') as mock_gtk:
             mock_dialog = Mock()
             mock_gtk.Dialog.return_value = mock_dialog
             mock_dialog.run.return_value = 0  # Cancel
 
             # Should not raise an error
             try:
-                Dialogs.show_create_category_dialog(
+                show_create_category_dialog(
                     self.parent,
                     self.categories,
                     self.callback,
@@ -52,14 +54,14 @@ class TestShowCreateCategoryDialog(unittest.TestCase):
 
     def test_backward_compatibility_without_pre_config(self):
         """Test that the function still works without pre_config (backward compatibility)"""
-        with patch('dialogs.Gtk') as mock_gtk:
+        with patch('dialogs.category_dialog.Gtk') as mock_gtk:
             mock_dialog = Mock()
             mock_gtk.Dialog.return_value = mock_dialog
             mock_dialog.run.return_value = 0  # Cancel
 
             # Should work without pre_config
             try:
-                Dialogs.show_create_category_dialog(
+                show_create_category_dialog(
                     self.parent,
                     self.categories,
                     self.callback
@@ -94,7 +96,7 @@ class TestShowAddProjectDialog(unittest.TestCase):
     def test_signature_accepts_pre_config(self):
         """Test that the function accepts pre_config parameter"""
         # This test verifies the signature change
-        with patch('dialogs.Gtk') as mock_gtk:
+        with patch('dialogs.project_dialog.Gtk') as mock_gtk:
             mock_dialog = Mock()
             mock_gtk.Dialog.return_value = mock_dialog
             mock_dialog.run.return_value = 0  # Cancel
@@ -102,7 +104,7 @@ class TestShowAddProjectDialog(unittest.TestCase):
 
             # Should not raise an error
             try:
-                Dialogs.show_add_project_dialog(
+                show_add_project_dialog(
                     self.parent,
                     self.categories,
                     self.callback,
@@ -113,7 +115,7 @@ class TestShowAddProjectDialog(unittest.TestCase):
 
     def test_backward_compatibility_without_pre_config(self):
         """Test that the function still works without pre_config (backward compatibility)"""
-        with patch('dialogs.Gtk') as mock_gtk:
+        with patch('dialogs.project_dialog.Gtk') as mock_gtk:
             mock_dialog = Mock()
             mock_gtk.Dialog.return_value = mock_dialog
             mock_dialog.run.return_value = 0  # Cancel
@@ -121,7 +123,7 @@ class TestShowAddProjectDialog(unittest.TestCase):
 
             # Should work without pre_config
             try:
-                Dialogs.show_add_project_dialog(
+                show_add_project_dialog(
                     self.parent,
                     self.categories,
                     self.callback
@@ -137,7 +139,7 @@ class TestShowAddProjectDialog(unittest.TestCase):
             'hierarchy_path': 'cat:Web'
         }
 
-        with patch('dialogs.Gtk') as mock_gtk:
+        with patch('dialogs.project_dialog.Gtk') as mock_gtk:
             mock_dialog = Mock()
             mock_gtk.Dialog.return_value = mock_dialog
             mock_dialog.run.return_value = 0  # Cancel
@@ -145,7 +147,7 @@ class TestShowAddProjectDialog(unittest.TestCase):
 
             # Should not raise an error
             try:
-                Dialogs.show_add_project_dialog(
+                show_add_project_dialog(
                     self.parent,
                     self.categories,
                     self.callback,
@@ -162,7 +164,7 @@ class TestShowAddProjectDialog(unittest.TestCase):
             'hierarchy_path': 'cat:Web:Frontend'
         }
 
-        with patch('dialogs.Gtk') as mock_gtk:
+        with patch('dialogs.project_dialog.Gtk') as mock_gtk:
             mock_dialog = Mock()
             mock_gtk.Dialog.return_value = mock_dialog
             mock_dialog.run.return_value = 0  # Cancel
@@ -170,7 +172,7 @@ class TestShowAddProjectDialog(unittest.TestCase):
 
             # Should not raise an error
             try:
-                Dialogs.show_add_project_dialog(
+                show_add_project_dialog(
                     self.parent,
                     self.categories,
                     self.callback,
@@ -187,7 +189,7 @@ class TestShowAddProjectDialog(unittest.TestCase):
             'hierarchy_path': 'cat:NonExistent'
         }
 
-        with patch('dialogs.Gtk') as mock_gtk:
+        with patch('dialogs.project_dialog.Gtk') as mock_gtk:
             mock_dialog = Mock()
             mock_gtk.Dialog.return_value = mock_dialog
             mock_dialog.run.return_value = 0  # Cancel
@@ -195,7 +197,7 @@ class TestShowAddProjectDialog(unittest.TestCase):
 
             # Should not raise an error, just fall back to default
             try:
-                Dialogs.show_add_project_dialog(
+                show_add_project_dialog(
                     self.parent,
                     self.categories,
                     self.callback,

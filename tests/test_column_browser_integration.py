@@ -16,8 +16,8 @@ import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
 
-from browser import ColumnBrowser
-from context_menu import ContextMenuHandler
+from ui.column_browser import ColumnBrowser
+from context_menu.handler import ContextMenuHandler
 
 
 class TestColumnBrowserContextMenuIntegration(unittest.TestCase):

@@ -16,12 +16,15 @@ import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, Gdk
 
-from context_menu import (
-    ContextMenuHandler,
-    ROOT_COLUMN,
-    CHILD_COLUMN,
-    CATEGORY_ITEM,
-    PROJECT_ITEM
+from context_menu.handler import ContextMenuHandler
+from context_menu.context_detector import (
+    detect_context, get_hierarchy_info,
+    ROOT_COLUMN, CHILD_COLUMN, CATEGORY_ITEM, PROJECT_ITEM
+)
+from context_menu.actions import (
+    create_category_action, add_project_action, open_vscode_action,
+    open_kiro_action, delete_category_action, rename_category_action,
+    delete_project_action
 )
 
 
@@ -51,7 +54,7 @@ class TestContextMenuHandler(unittest.TestCase):
         event.y = 100
 
         # Execute
-        context = self.handler.detect_context(event)
+        context = detect_context(self.column_browser, event)
 
         # Verify
         self.assertEqual(context['type'], ROOT_COLUMN)
@@ -71,7 +74,7 @@ class TestContextMenuHandler(unittest.TestCase):
         event.y = 100
 
         # Execute
-        context = self.handler.detect_context(event)
+        context = detect_context(self.column_browser, event)
 
         # Verify
         self.assertEqual(context['type'], CHILD_COLUMN)
@@ -100,7 +103,7 @@ class TestContextMenuHandler(unittest.TestCase):
         event.y = 100
 
         # Execute
-        context = self.handler.detect_context(event)
+        context = detect_context(self.column_browser, event)
 
         # Verify
         self.assertEqual(context['type'], CATEGORY_ITEM)
@@ -128,7 +131,7 @@ class TestContextMenuHandler(unittest.TestCase):
         event.y = 100
 
         # Execute
-        context = self.handler.detect_context(event)
+        context = detect_context(self.column_browser, event)
 
         # Verify
         self.assertEqual(context['type'], PROJECT_ITEM)
@@ -138,14 +141,14 @@ class TestContextMenuHandler(unittest.TestCase):
     def test_get_hierarchy_info_root_level(self):
         """Test hierarchy info extraction for root level"""
         # Test with "categories"
-        info = self.handler.get_hierarchy_info("categories")
+        info = get_hierarchy_info("categories")
         self.assertEqual(info['level'], 0)
         self.assertIsNone(info['category'])
         self.assertIsNone(info['subcategory_path'])
         self.assertEqual(info['full_path'], "categories")
 
         # Test with None
-        info = self.handler.get_hierarchy_info(None)
+        info = get_hierarchy_info(None)
         self.assertEqual(info['level'], 0)
         self.assertIsNone(info['category'])
         self.assertIsNone(info['subcategory_path'])
@@ -153,7 +156,7 @@ class TestContextMenuHandler(unittest.TestCase):
 
     def test_get_hierarchy_info_first_level(self):
         """Test hierarchy info extraction for first level (category)"""
-        info = self.handler.get_hierarchy_info("cat:Web")
+        info = get_hierarchy_info("cat:Web")
         self.assertEqual(info['level'], 1)
         self.assertEqual(info['category'], "Web")
         self.assertIsNone(info['subcategory_path'])
@@ -161,7 +164,7 @@ class TestContextMenuHandler(unittest.TestCase):
 
     def test_get_hierarchy_info_second_level(self):
         """Test hierarchy info extraction for second level (subcategory)"""
-        info = self.handler.get_hierarchy_info("cat:Web:Frontend")
+        info = get_hierarchy_info("cat:Web:Frontend")
         self.assertEqual(info['level'], 2)
         self.assertEqual(info['category'], "Web")
         self.assertEqual(info['subcategory_path'], "Frontend")
@@ -169,7 +172,7 @@ class TestContextMenuHandler(unittest.TestCase):
 
     def test_get_hierarchy_info_deep_nesting(self):
         """Test hierarchy info extraction for deeply nested subcategories"""
-        info = self.handler.get_hierarchy_info("cat:Web:Frontend:React:Components")
+        info = get_hierarchy_info("cat:Web:Frontend:React:Components")
         self.assertEqual(info['level'], 4)
         self.assertEqual(info['category'], "Web")
         self.assertEqual(info['subcategory_path'], "Frontend:React:Components")
@@ -177,7 +180,7 @@ class TestContextMenuHandler(unittest.TestCase):
 
     def test_get_hierarchy_info_projects_view(self):
         """Test hierarchy info extraction for projects view"""
-        info = self.handler.get_hierarchy_info("projects:cat:Web:Frontend")
+        info = get_hierarchy_info("projects:cat:Web:Frontend")
         self.assertEqual(info['level'], 2)
         self.assertEqual(info['category'], "Web")
         self.assertEqual(info['subcategory_path'], "Frontend")
@@ -307,23 +310,23 @@ class TestCreateContextMenu(unittest.TestCase):
             'is_project': False
         }
 
-        # Mock the action methods to verify they're called
-        self.handler.create_category_action = Mock()
-        self.handler.add_project_action = Mock()
+        # Mock the action functions
+        with patch('context_menu.actions.create_category_action') as mock_create, \
+             patch('context_menu.actions.add_project_action') as mock_add:
 
-        menu = self.handler.create_context_menu(context)
+            menu = self.handler.create_context_menu(context)
 
-        # Get menu items
-        items = menu.get_children()
-        self.assertEqual(len(items), 2)
+            # Get menu items
+            items = menu.get_children()
+            self.assertEqual(len(items), 2)
 
-        # Activate first item (Create category)
-        items[0].activate()
-        self.handler.create_category_action.assert_called_once()
+            # Activate first item (Create category)
+            items[0].activate()
+            mock_create.assert_called_once()
 
-        # Activate second item (Add project)
-        items[1].activate()
-        self.handler.add_project_action.assert_called_once()
+            # Activate second item (Add project)
+            items[1].activate()
+            mock_add.assert_called_once()
 
     def test_add_menu_item_helper(self):
         """Test the _add_menu_item helper method"""
@@ -701,8 +704,8 @@ class TestCreateCategoryAction(unittest.TestCase):
 
         self.handler = ContextMenuHandler(self.column_browser, self.parent_window)
 
-    @patch('dialogs.Dialogs')
-    def test_create_category_action_root_column(self, mock_dialogs):
+    @patch('src.dialogs.show_create_category_dialog')
+    def test_create_category_action_root_column(self, mock_dialog):
         """Test create_category_action for root column context"""
         context = {
             'type': ROOT_COLUMN,
@@ -712,13 +715,13 @@ class TestCreateCategoryAction(unittest.TestCase):
         }
 
         # Execute
-        self.handler.create_category_action(context)
+        create_category_action(context, self.column_browser, self.parent_window)
 
-        # Verify Dialogs.show_create_category_dialog was called
-        mock_dialogs.show_create_category_dialog.assert_called_once()
+        # Verify show_create_category_dialog was called
+        mock_dialog.assert_called_once()
 
         # Verify the arguments
-        call_args = mock_dialogs.show_create_category_dialog.call_args
+        call_args = mock_dialog.call_args
         self.assertEqual(call_args[0][0], self.parent_window)  # parent
         self.assertEqual(call_args[0][1], self.parent_window.categories)  # categories
         self.assertIsNotNone(call_args[0][2])  # callback
@@ -729,8 +732,8 @@ class TestCreateCategoryAction(unittest.TestCase):
         self.assertFalse(pre_config['force_subcategory'])
         self.assertEqual(pre_config['hierarchy_path'], 'categories')
 
-    @patch('dialogs.Dialogs')
-    def test_create_category_action_child_column_first_level(self, mock_dialogs):
+    @patch('src.dialogs.show_create_category_dialog')
+    def test_create_category_action_child_column_first_level(self, mock_dialog):
         """Test create_category_action for child column at first level"""
         context = {
             'type': CHILD_COLUMN,
@@ -740,20 +743,20 @@ class TestCreateCategoryAction(unittest.TestCase):
         }
 
         # Execute
-        self.handler.create_category_action(context)
+        create_category_action(context, self.column_browser, self.parent_window)
 
-        # Verify Dialogs.show_create_category_dialog was called
-        mock_dialogs.show_create_category_dialog.assert_called_once()
+        # Verify show_create_category_dialog was called
+        mock_dialog.assert_called_once()
 
         # Verify pre_config
-        call_args = mock_dialogs.show_create_category_dialog.call_args
+        call_args = mock_dialog.call_args
         pre_config = call_args[1]['pre_config']
         self.assertEqual(pre_config['parent_category'], 'Web')
         self.assertTrue(pre_config['force_subcategory'])
         self.assertEqual(pre_config['hierarchy_path'], 'cat:Web')
 
-    @patch('dialogs.Dialogs')
-    def test_create_category_action_child_column_nested(self, mock_dialogs):
+    @patch('src.dialogs.show_create_category_dialog')
+    def test_create_category_action_child_column_nested(self, mock_dialog):
         """Test create_category_action for child column at nested level"""
         context = {
             'type': CHILD_COLUMN,
@@ -763,20 +766,20 @@ class TestCreateCategoryAction(unittest.TestCase):
         }
 
         # Execute
-        self.handler.create_category_action(context)
+        create_category_action(context, self.column_browser, self.parent_window)
 
         # Verify Dialogs.show_create_category_dialog was called
-        mock_dialogs.show_create_category_dialog.assert_called_once()
+        mock_dialog.assert_called_once()
 
         # Verify pre_config
-        call_args = mock_dialogs.show_create_category_dialog.call_args
+        call_args = mock_dialog.call_args
         pre_config = call_args[1]['pre_config']
         self.assertEqual(pre_config['parent_category'], 'Web:Frontend')
         self.assertTrue(pre_config['force_subcategory'])
         self.assertEqual(pre_config['hierarchy_path'], 'cat:Web:Frontend')
 
-    @patch('dialogs.Dialogs')
-    def test_create_category_action_category_item(self, mock_dialogs):
+    @patch('src.dialogs.show_create_category_dialog')
+    def test_create_category_action_category_item(self, mock_dialog):
         """Test create_category_action for category item context"""
         context = {
             'type': CATEGORY_ITEM,
@@ -786,20 +789,20 @@ class TestCreateCategoryAction(unittest.TestCase):
         }
 
         # Execute
-        self.handler.create_category_action(context)
+        create_category_action(context, self.column_browser, self.parent_window)
 
         # Verify Dialogs.show_create_category_dialog was called
-        mock_dialogs.show_create_category_dialog.assert_called_once()
+        mock_dialog.assert_called_once()
 
         # Verify pre_config
-        call_args = mock_dialogs.show_create_category_dialog.call_args
+        call_args = mock_dialog.call_args
         pre_config = call_args[1]['pre_config']
         self.assertEqual(pre_config['parent_category'], 'Web')
         self.assertTrue(pre_config['force_subcategory'])
         self.assertEqual(pre_config['hierarchy_path'], 'cat:Web')
 
-    @patch('dialogs.Dialogs')
-    def test_create_category_action_category_item_nested(self, mock_dialogs):
+    @patch('src.dialogs.show_create_category_dialog')
+    def test_create_category_action_category_item_nested(self, mock_dialog):
         """Test create_category_action for nested category item"""
         context = {
             'type': CATEGORY_ITEM,
@@ -809,20 +812,20 @@ class TestCreateCategoryAction(unittest.TestCase):
         }
 
         # Execute
-        self.handler.create_category_action(context)
+        create_category_action(context, self.column_browser, self.parent_window)
 
         # Verify Dialogs.show_create_category_dialog was called
-        mock_dialogs.show_create_category_dialog.assert_called_once()
+        mock_dialog.assert_called_once()
 
         # Verify pre_config
-        call_args = mock_dialogs.show_create_category_dialog.call_args
+        call_args = mock_dialog.call_args
         pre_config = call_args[1]['pre_config']
         self.assertEqual(pre_config['parent_category'], 'Web:Frontend')
         self.assertTrue(pre_config['force_subcategory'])
         self.assertEqual(pre_config['hierarchy_path'], 'cat:Web:Frontend')
 
-    @patch('dialogs.Dialogs')
-    def test_create_category_callback_creates_main_category(self, mock_dialogs):
+    @patch('src.dialogs.show_create_category_dialog')
+    def test_create_category_callback_creates_main_category(self, mock_dialog):
         """Test that the callback creates a main category correctly"""
         context = {
             'type': ROOT_COLUMN,
@@ -832,10 +835,10 @@ class TestCreateCategoryAction(unittest.TestCase):
         }
 
         # Execute
-        self.handler.create_category_action(context)
+        create_category_action(context, self.column_browser, self.parent_window)
 
         # Get the callback that was passed to the dialog
-        call_args = mock_dialogs.show_create_category_dialog.call_args
+        call_args = mock_dialog.call_args
         callback = call_args[0][2]
 
         # Call the callback to create a new category
@@ -851,8 +854,8 @@ class TestCreateCategoryAction(unittest.TestCase):
         self.parent_window.config.save_categories.assert_called_once_with(self.parent_window.categories)
         self.column_browser.load_mixed_content.assert_called_once()
 
-    @patch('dialogs.Dialogs')
-    def test_create_category_callback_creates_subcategory(self, mock_dialogs):
+    @patch('src.dialogs.show_create_category_dialog')
+    def test_create_category_callback_creates_subcategory(self, mock_dialog):
         """Test that the callback creates a subcategory correctly"""
         context = {
             'type': CHILD_COLUMN,
@@ -862,10 +865,10 @@ class TestCreateCategoryAction(unittest.TestCase):
         }
 
         # Execute
-        self.handler.create_category_action(context)
+        create_category_action(context, self.column_browser, self.parent_window)
 
         # Get the callback that was passed to the dialog
-        call_args = mock_dialogs.show_create_category_dialog.call_args
+        call_args = mock_dialog.call_args
         callback = call_args[0][2]
 
         # Call the callback to create a new subcategory
@@ -880,8 +883,8 @@ class TestCreateCategoryAction(unittest.TestCase):
         self.parent_window.config.save_categories.assert_called_once_with(self.parent_window.categories)
         self.column_browser.load_mixed_content.assert_called_once()
 
-    @patch('dialogs.Dialogs')
-    def test_create_category_callback_creates_nested_subcategory(self, mock_dialogs):
+    @patch('src.dialogs.show_create_category_dialog')
+    def test_create_category_callback_creates_nested_subcategory(self, mock_dialog):
         """Test that the callback creates a nested subcategory correctly"""
         context = {
             'type': CHILD_COLUMN,
@@ -891,10 +894,10 @@ class TestCreateCategoryAction(unittest.TestCase):
         }
 
         # Execute
-        self.handler.create_category_action(context)
+        create_category_action(context, self.column_browser, self.parent_window)
 
         # Get the callback that was passed to the dialog
-        call_args = mock_dialogs.show_create_category_dialog.call_args
+        call_args = mock_dialog.call_args
         callback = call_args[0][2]
 
         # Call the callback to create a nested subcategory
@@ -911,8 +914,8 @@ class TestCreateCategoryAction(unittest.TestCase):
         self.parent_window.config.save_categories.assert_called_once_with(self.parent_window.categories)
         self.column_browser.load_mixed_content.assert_called_once()
 
-    @patch('dialogs.Dialogs')
-    def test_create_category_callback_handles_existing_category(self, mock_dialogs):
+    @patch('src.dialogs.show_create_category_dialog')
+    def test_create_category_callback_handles_existing_category(self, mock_dialog):
         """Test that the callback handles existing category gracefully"""
         context = {
             'type': ROOT_COLUMN,
@@ -922,10 +925,10 @@ class TestCreateCategoryAction(unittest.TestCase):
         }
 
         # Execute
-        self.handler.create_category_action(context)
+        create_category_action(context, self.column_browser, self.parent_window)
 
         # Get the callback
-        call_args = mock_dialogs.show_create_category_dialog.call_args
+        call_args = mock_dialog.call_args
         callback = call_args[0][2]
 
         # Try to create a category that already exists
@@ -940,8 +943,8 @@ class TestCreateCategoryAction(unittest.TestCase):
         self.parent_window.config.save_categories.assert_called_once()
         self.column_browser.load_mixed_content.assert_called_once()
 
-    @patch('dialogs.Dialogs')
-    def test_create_category_action_with_invalid_context_type(self, mock_dialogs):
+    @patch('src.dialogs.show_create_category_dialog')
+    def test_create_category_action_with_invalid_context_type(self, mock_dialog):
         """Test create_category_action with invalid context type falls back gracefully"""
         context = {
             'type': 'invalid_type',
@@ -951,19 +954,19 @@ class TestCreateCategoryAction(unittest.TestCase):
         }
 
         # Execute
-        self.handler.create_category_action(context)
+        create_category_action(context, self.column_browser, self.parent_window)
 
         # Verify Dialogs.show_create_category_dialog was called with fallback config
-        mock_dialogs.show_create_category_dialog.assert_called_once()
+        mock_dialog.assert_called_once()
 
         # Verify pre_config has fallback values
-        call_args = mock_dialogs.show_create_category_dialog.call_args
+        call_args = mock_dialog.call_args
         pre_config = call_args[1]['pre_config']
         self.assertIsNone(pre_config['parent_category'])
         self.assertFalse(pre_config['force_subcategory'])
 
-    @patch('dialogs.Dialogs')
-    def test_create_category_action_with_none_hierarchy_path(self, mock_dialogs):
+    @patch('src.dialogs.show_create_category_dialog')
+    def test_create_category_action_with_none_hierarchy_path(self, mock_dialog):
         """Test create_category_action handles None hierarchy_path"""
         context = {
             'type': ROOT_COLUMN,
@@ -973,13 +976,13 @@ class TestCreateCategoryAction(unittest.TestCase):
         }
 
         # Execute
-        self.handler.create_category_action(context)
+        create_category_action(context, self.column_browser, self.parent_window)
 
         # Verify it doesn't crash and calls the dialog
-        mock_dialogs.show_create_category_dialog.assert_called_once()
+        mock_dialog.assert_called_once()
 
-    @patch('dialogs.Dialogs')
-    def test_create_category_action_with_empty_item_path(self, mock_dialogs):
+    @patch('src.dialogs.show_create_category_dialog')
+    def test_create_category_action_with_empty_item_path(self, mock_dialog):
         """Test create_category_action handles empty item_path for category item"""
         context = {
             'type': CATEGORY_ITEM,
@@ -989,13 +992,13 @@ class TestCreateCategoryAction(unittest.TestCase):
         }
 
         # Execute
-        self.handler.create_category_action(context)
+        create_category_action(context, self.column_browser, self.parent_window)
 
         # Verify it doesn't crash and calls the dialog
-        mock_dialogs.show_create_category_dialog.assert_called_once()
+        mock_dialog.assert_called_once()
 
         # Verify pre_config handles empty item_path
-        call_args = mock_dialogs.show_create_category_dialog.call_args
+        call_args = mock_dialog.call_args
         pre_config = call_args[1]['pre_config']
         self.assertIsNone(pre_config['parent_category'])
 
@@ -1023,7 +1026,7 @@ class TestOpenVSCodeAction(unittest.TestCase):
         self.parent_window.open_vscode_project = Mock(return_value=True)
 
         # Execute
-        self.handler.open_vscode_action(context)
+        open_vscode_action(context, self.parent_window)
 
         # Verify open_vscode_project was called with correct path
         self.parent_window.open_vscode_project.assert_called_once_with('/home/user/projects/my-project')
@@ -1043,7 +1046,7 @@ class TestOpenVSCodeAction(unittest.TestCase):
 
         # Execute - should not raise exception
         try:
-            self.handler.open_vscode_action(context)
+            open_vscode_action(context, self.parent_window)
         except Exception as e:
             self.fail(f"open_vscode_action raised exception: {e}")
 
@@ -1064,7 +1067,7 @@ class TestOpenVSCodeAction(unittest.TestCase):
         self.handler.show_error_dialog = Mock()
 
         # Execute
-        self.handler.open_vscode_action(context)
+        open_vscode_action(context, self.parent_window)
 
         # Verify error dialog was shown
         self.handler.show_error_dialog.assert_called_once()
@@ -1089,7 +1092,7 @@ class TestOpenVSCodeAction(unittest.TestCase):
 
         # Execute - should not raise exception
         try:
-            self.handler.open_vscode_action(context)
+            open_vscode_action(context, self.parent_window)
         except Exception as e:
             self.fail(f"open_vscode_action raised exception: {e}")
 
@@ -1121,7 +1124,7 @@ class TestOpenVSCodeAction(unittest.TestCase):
             self.parent_window.open_vscode_project = Mock(return_value=True)
 
             # Execute
-            self.handler.open_vscode_action(context)
+            open_vscode_action(context, self.parent_window)
 
             # Verify open_vscode_project was called with correct path
             self.parent_window.open_vscode_project.assert_called_with(project_path)

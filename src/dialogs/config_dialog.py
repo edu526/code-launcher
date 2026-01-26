@@ -305,13 +305,13 @@ def _copy_logs_to_clipboard(logs_buffer):
     clipboard.set_text(logs_text, -1)
 
 
-def show_preferences_dialog(parent, config_manager):
-    """Show preferences dialog for selecting default editor"""
+def show_preferences_dialog(parent, config_manager, terminal_manager=None):
+    """Show preferences dialog for selecting default editor and terminal"""
     dialog = Gtk.Dialog(
         title="Preferences",
         flags=0,
-        default_width=400,
-        default_height=200
+        default_width=450,
+        default_height=300
     )
     dialog.set_position(Gtk.WindowPosition.CENTER)
     dialog.set_modal(True)
@@ -322,7 +322,7 @@ def show_preferences_dialog(parent, config_manager):
     )
 
     content = dialog.get_content_area()
-    content.set_spacing(10)
+    content.set_spacing(15)
     content.set_margin_start(20)
     content.set_margin_end(20)
     content.set_margin_top(20)
@@ -332,10 +332,19 @@ def show_preferences_dialog(parent, config_manager):
     preferences = config_manager.load_preferences()
     current_editor = preferences.get("default_editor", "kiro")
 
-    # Label
-    label = Gtk.Label(label="Select default editor:")
-    label.set_halign(Gtk.Align.START)
-    content.pack_start(label, False, False, 0)
+    # Editor Preferences Section
+    editor_section = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+
+    # Editor section label
+    editor_label = Gtk.Label()
+    editor_label.set_markup("<b>Editor Preferences:</b>")
+    editor_label.set_halign(Gtk.Align.START)
+    editor_section.pack_start(editor_label, False, False, 0)
+
+    # Editor selection label
+    select_label = Gtk.Label(label="Select default editor:")
+    select_label.set_halign(Gtk.Align.START)
+    editor_section.pack_start(select_label, False, False, 0)
 
     # Radio buttons
     kiro_radio = Gtk.RadioButton.new_with_label_from_widget(None, "Kiro")
@@ -347,27 +356,70 @@ def show_preferences_dialog(parent, config_manager):
     else:
         vscode_radio.set_active(True)
 
-    content.pack_start(kiro_radio, False, False, 5)
-    content.pack_start(vscode_radio, False, False, 5)
+    editor_section.pack_start(kiro_radio, False, False, 5)
+    editor_section.pack_start(vscode_radio, False, False, 5)
 
-    # Info label
-    info_label = Gtk.Label()
-    info_label.set_markup("<small><i>The selected editor will open on double click on a project.</i></small>")
-    info_label.set_halign(Gtk.Align.START)
-    info_label.set_line_wrap(True)
-    content.pack_start(info_label, False, False, 10)
+    # Editor info label
+    editor_info_label = Gtk.Label()
+    editor_info_label.set_markup("<small><i>The selected editor will open on double click on a project.</i></small>")
+    editor_info_label.set_halign(Gtk.Align.START)
+    editor_info_label.set_line_wrap(True)
+    editor_section.pack_start(editor_info_label, False, False, 5)
+
+    content.pack_start(editor_section, False, False, 0)
+
+    # Terminal Preferences Section (if terminal_manager is provided and functional)
+    terminal_preferences = None
+    if terminal_manager:
+        try:
+            from src.dialogs.terminal_preferences import TerminalPreferences
+            terminal_preferences = TerminalPreferences(dialog, terminal_manager)
+            terminal_section = terminal_preferences.create_terminal_section()
+            content.pack_start(terminal_section, False, False, 0)
+        except Exception as e:
+            # Graceful degradation: log error but continue without terminal preferences
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Failed to create terminal preferences section: {e}")
+            logger.info("Terminal preferences will not be available in this session")
 
     dialog.show_all()
     response = dialog.run()
 
     if response == Gtk.ResponseType.OK:
-        # Save preference
+        # Save editor preference
         selected_editor = "kiro" if kiro_radio.get_active() else "vscode"
-        preferences["default_editor"] = selected_editor
-        config_manager.save_preferences(preferences)
+
+        # Apply terminal selection if terminal preferences are available
+        if terminal_preferences:
+            try:
+                terminal_success = terminal_preferences.apply_terminal_selection()
+                if not terminal_success:
+                    import logging
+                    logger = logging.getLogger(__name__)
+                    logger.warning("Failed to apply terminal selection, but continuing with editor preference save")
+            except Exception as e:
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f"Error applying terminal selection: {e}")
+
+        # Load current preferences AFTER applying terminal selection to get the updated values
+        current_preferences = config_manager.load_preferences()
+        current_preferences["default_editor"] = selected_editor
+        config_manager.save_preferences(current_preferences)
 
         # Update parent window's preference
         if hasattr(parent, 'default_editor'):
             parent.default_editor = selected_editor
+
+    elif response == Gtk.ResponseType.CANCEL:
+        # Cancel any pending terminal selection
+        if terminal_preferences:
+            try:
+                terminal_preferences.cancel_terminal_selection()
+            except Exception as e:
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f"Error cancelling terminal selection: {e}")
 
     dialog.destroy()

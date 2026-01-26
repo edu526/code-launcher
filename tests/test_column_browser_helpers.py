@@ -16,7 +16,7 @@ import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
 
-from browser import ColumnBrowser
+from ui.column_browser import ColumnBrowser
 
 
 class TestColumnBrowserGetItemAtPosition(unittest.TestCase):

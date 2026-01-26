@@ -21,6 +21,7 @@ from .actions import (
     add_project_action,
     open_vscode_action,
     open_kiro_action,
+    open_in_terminal,
     delete_category_action,
     rename_category_action,
     delete_project_action
@@ -92,11 +93,16 @@ class ContextMenuHandler:
                               lambda w: delete_category_action(context, self.column_browser, self.parent_window))
 
         elif context_type == PROJECT_ITEM:
-            # Project item menu: Open in VSCode or Kiro, and Delete
+            # Project item menu: Open in VSCode, Kiro, Terminal, and Delete
             self._add_menu_item(menu, "Open in VSCode",
                               lambda w: open_vscode_action(context, self.parent_window))
             self._add_menu_item(menu, "Open in Kiro",
                               lambda w: open_kiro_action(context, self.parent_window))
+
+            # Add "Open In Terminal" if terminals are available
+            if self._has_available_terminals():
+                self._add_menu_item(menu, "Open In Terminal",
+                                  lambda w: open_in_terminal(context, self.parent_window))
 
             # Separator
             menu.append(Gtk.SeparatorMenuItem())
@@ -120,6 +126,33 @@ class ContextMenuHandler:
         menu_item.connect("activate", callback)
         menu.append(menu_item)
         logger.debug(f"Added menu item: {label}")
+
+    def _has_available_terminals(self):
+        """
+        Check if any terminals are available on the system.
+
+        This method implements graceful degradation by safely checking
+        terminal availability and handling any errors that might occur.
+
+        Returns:
+            bool: True if at least one terminal is available, False otherwise
+        """
+        try:
+            # Get terminal manager from parent window
+            terminal_manager = getattr(self.parent_window, 'terminal_manager', None)
+            if not terminal_manager:
+                logger.debug("Terminal manager not available")
+                return False
+
+            # Check if any terminals are available
+            has_terminals = terminal_manager.has_available_terminals()
+            logger.debug(f"Terminal availability check: {has_terminals}")
+            return has_terminals
+
+        except Exception as e:
+            logger.error(f"Error checking terminal availability: {e}")
+            # Graceful degradation: return False on any error
+            return False
 
     def show_menu(self, menu, event):
         """
