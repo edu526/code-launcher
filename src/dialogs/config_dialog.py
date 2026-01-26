@@ -341,23 +341,28 @@ def show_preferences_dialog(parent, config_manager, terminal_manager=None):
     editor_label.set_halign(Gtk.Align.START)
     editor_section.pack_start(editor_label, False, False, 0)
 
-    # Editor selection label
-    select_label = Gtk.Label(label="Select default editor:")
-    select_label.set_halign(Gtk.Align.START)
-    editor_section.pack_start(select_label, False, False, 0)
+    # Editor selection container
+    editor_selection_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
 
-    # Radio buttons
-    kiro_radio = Gtk.RadioButton.new_with_label_from_widget(None, "Kiro")
-    vscode_radio = Gtk.RadioButton.new_with_label_from_widget(kiro_radio, "VSCode")
+    # Editor selection label
+    editor_select_label = Gtk.Label(label="Default editor:")
+    editor_select_label.set_halign(Gtk.Align.START)
+    editor_selection_box.pack_start(editor_select_label, False, False, 0)
+
+    # Editor dropdown
+    editor_combo = Gtk.ComboBoxText()
+    editor_combo.set_hexpand(True)
+    editor_combo.append_text("Kiro")
+    editor_combo.append_text("VSCode")
 
     # Set current selection
     if current_editor == "kiro":
-        kiro_radio.set_active(True)
+        editor_combo.set_active(0)
     else:
-        vscode_radio.set_active(True)
+        editor_combo.set_active(1)
 
-    editor_section.pack_start(kiro_radio, False, False, 5)
-    editor_section.pack_start(vscode_radio, False, False, 5)
+    editor_selection_box.pack_start(editor_combo, True, True, 0)
+    editor_section.pack_start(editor_selection_box, False, False, 0)
 
     # Editor info label
     editor_info_label = Gtk.Label()
@@ -387,8 +392,9 @@ def show_preferences_dialog(parent, config_manager, terminal_manager=None):
     response = dialog.run()
 
     if response == Gtk.ResponseType.OK:
-        # Save editor preference
-        selected_editor = "kiro" if kiro_radio.get_active() else "vscode"
+        # Get editor preference from combobox
+        selected_editor_index = editor_combo.get_active()
+        selected_editor = "kiro" if selected_editor_index == 0 else "vscode"
 
         # Apply terminal selection if terminal preferences are available
         if terminal_preferences:
