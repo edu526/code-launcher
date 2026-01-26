@@ -354,6 +354,7 @@ class ColumnBrowser(Gtk.ScrolledWindow):
                 subcategory_path = ":".join(parts[1:])
 
         # Filter and add projects
+        category_projects = []
         for project_name, project_info in projects.items():
             if isinstance(project_info, str):
                 project_path = project_info
@@ -383,7 +384,14 @@ class ColumnBrowser(Gtk.ScrolledWindow):
                     belongs_to_level = True
 
             if belongs_to_level:
-                self.store.append([project_name, project_path, True, "code"])
+                category_projects.append((project_name, project_path))
+
+        # Sort projects alphabetically
+        category_projects.sort(key=lambda x: x[0].lower())
+
+        # Add sorted projects to store
+        for project_name, project_path in category_projects:
+            self.store.append([project_name, project_path, True, "code"])
 
     def get_selected_path(self):
         """Get currently selected path"""

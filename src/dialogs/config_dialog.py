@@ -135,7 +135,7 @@ def show_projects_dialog(parent, projects, on_save_callback):
     content.set_margin_top(10)
     content.set_margin_bottom(10)
 
-    label = Gtk.Label(label="Projects (format: name:path:category):")
+    label = Gtk.Label(label="Projects (format: name:path:category:subcategory):")
     content.pack_start(label, False, False, 0)
 
     scrolled = Gtk.ScrolledWindow()
@@ -149,11 +149,12 @@ def show_projects_dialog(parent, projects, on_save_callback):
     proj_text = ""
     for proj_name, proj_info in projects.items():
         if isinstance(proj_info, str):
-            proj_text += f"{proj_name}:{proj_info}:Others\n"
+            proj_text += f"{proj_name}:{proj_info}:Others:\n"
         else:
             path = proj_info.get("path", "")
             category = proj_info.get("category", "Others")
-            proj_text += f"{proj_name}:{path}:{category}\n"
+            subcategory = proj_info.get("subcategory", "")
+            proj_text += f"{proj_name}:{path}:{category}:{subcategory}\n"
 
     buffer.set_text(proj_text.strip())
     scrolled.add(textview)
@@ -172,15 +173,23 @@ def show_projects_dialog(parent, projects, on_save_callback):
         for line in proj_text.split('\n'):
             line = line.strip()
             if line and ':' in line:
-                parts = line.split(':', 2)
+                parts = line.split(':', 3)
                 if len(parts) >= 2:
                     proj_name = parts[0].strip()
                     path = parts[1].strip()
                     category = parts[2].strip() if len(parts) > 2 else "Others"
-                    new_projects[proj_name] = {
+                    subcategory = parts[3].strip() if len(parts) > 3 else ""
+
+                    project_info = {
                         "path": path,
                         "category": category
                     }
+
+                    # Only add subcategory if it's not empty
+                    if subcategory:
+                        project_info["subcategory"] = subcategory
+
+                    new_projects[proj_name] = project_info
 
         if on_save_callback:
             on_save_callback(new_projects)

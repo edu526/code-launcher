@@ -74,8 +74,8 @@ class SearchManager:
             if project_name not in all_projects:
                 all_projects[project_name] = (project_name, project_path, category)
 
-        # Convert dict to list
-        final_projects = list(all_projects.values())
+        # Convert dict to list and sort alphabetically
+        final_projects = sorted(list(all_projects.values()), key=lambda x: x[0].lower())
 
         if final_projects or matching_categories:
             self.show_search_results(final_projects, matching_categories)
@@ -220,12 +220,14 @@ class SearchManager:
         results_column.current_path = "search_results"
         results_column.store.clear()
 
-        # Add categories first
-        for cat_name, cat_path, cat_type in categories:
+        # Add categories first (sorted alphabetically)
+        sorted_categories = sorted(categories, key=lambda x: x[0].lower())
+        for cat_name, cat_path, cat_type in sorted_categories:
             results_column.store.append([f"📁 {cat_name}", cat_path, True, "folder"])
 
-        # Add projects
-        for project_name, project_path, category in projects:
+        # Add projects (sorted alphabetically)
+        sorted_projects = sorted(projects, key=lambda x: x[0].lower())
+        for project_name, project_path, category in sorted_projects:
             results_column.store.append([f"📄 {project_name}", project_path, True, "code"])
 
         # If no results, show message
