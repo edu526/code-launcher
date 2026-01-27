@@ -197,6 +197,91 @@ def show_projects_dialog(parent, projects, on_save_callback):
     dialog.destroy()
 
 
+def show_files_dialog(parent, files, on_save_callback):
+    """Show files editor dialog"""
+    dialog = Gtk.Dialog(
+        title="Edit Files",
+        flags=0,
+        default_width=600,
+        default_height=500
+    )
+    dialog.set_position(Gtk.WindowPosition.CENTER)
+    dialog.set_modal(True)
+    dialog.set_transient_for(parent)
+    dialog.add_buttons(
+        Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+        Gtk.STOCK_OK, Gtk.ResponseType.OK
+    )
+
+    content = dialog.get_content_area()
+    content.set_spacing(10)
+    content.set_margin_start(10)
+    content.set_margin_end(10)
+    content.set_margin_top(10)
+    content.set_margin_bottom(10)
+
+    label = Gtk.Label(label="Files (format: name:path:category:subcategory):")
+    content.pack_start(label, False, False, 0)
+
+    scrolled = Gtk.ScrolledWindow()
+    scrolled.set_min_content_height(300)
+
+    textview = Gtk.TextView()
+    textview.set_wrap_mode(Gtk.WrapMode.NONE)
+    buffer = textview.get_buffer()
+
+    # Build files text
+    files_text = ""
+    for file_name, file_info in files.items():
+        if isinstance(file_info, str):
+            files_text += f"{file_name}:{file_info}:Others:\n"
+        else:
+            path = file_info.get("path", "")
+            category = file_info.get("category", "Others")
+            subcategory = file_info.get("subcategory", "")
+            files_text += f"{file_name}:{path}:{category}:{subcategory}\n"
+
+    buffer.set_text(files_text.strip())
+    scrolled.add(textview)
+    content.pack_start(scrolled, True, True, 0)
+
+    dialog.show_all()
+    response = dialog.run()
+
+    if response == Gtk.ResponseType.OK:
+        # Parse files
+        start = buffer.get_start_iter()
+        end = buffer.get_end_iter()
+        files_text = buffer.get_text(start, end, True)
+
+        new_files = {}
+        for line in files_text.split('\n'):
+            line = line.strip()
+            if line and ':' in line:
+                parts = line.split(':', 3)
+                if len(parts) >= 2:
+                    file_name = parts[0].strip()
+                    path = parts[1].strip()
+                    category = parts[2].strip() if len(parts) > 2 else "Others"
+                    subcategory = parts[3].strip() if len(parts) > 3 else ""
+
+                    file_info = {
+                        "path": path,
+                        "category": category
+                    }
+
+                    # Only add subcategory if it's not empty
+                    if subcategory:
+                        file_info["subcategory"] = subcategory
+
+                    new_files[file_name] = file_info
+
+        if on_save_callback:
+            on_save_callback(new_files)
+
+    dialog.destroy()
+
+
 def show_logs_dialog(parent):
     """Show logs viewer dialog"""
     dialog = Gtk.Dialog(

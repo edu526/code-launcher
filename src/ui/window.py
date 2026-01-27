@@ -185,6 +185,11 @@ class FinderStyleWindow(Gtk.Window):
         proj_item.connect("activate", self._on_edit_projects)
         menu.append(proj_item)
 
+        # Option: Edit Files
+        files_item = Gtk.MenuItem(label="Edit Files")
+        files_item.connect("activate", self._on_edit_files)
+        menu.append(files_item)
+
         # Option: Preferences
         pref_item = Gtk.MenuItem(label="Preferences")
         pref_item.connect("activate", self._on_preferences)
@@ -222,6 +227,17 @@ class FinderStyleWindow(Gtk.Window):
             self.reload_interface()
 
         show_projects_dialog(self, self.projects, on_save)
+
+    def _on_edit_files(self, menu_item):
+        """Open files editor dialog"""
+        from src.dialogs.config_dialog import show_files_dialog
+
+        def on_save(new_files):
+            self.files = new_files
+            self.config.save_files(new_files)
+            self.reload_interface()
+
+        show_files_dialog(self, self.files, on_save)
 
     def _on_preferences(self, menu_item):
         """Open preferences dialog"""
