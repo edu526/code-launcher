@@ -826,6 +826,20 @@ def rename_category_action(context, column_browser, parent_window):
             if parts[0] in parent_window.categories:
                 parent_window.categories[new_name] = parent_window.categories.pop(parts[0])
                 logger.info(f"Renamed main category: {parts[0]} -> {new_name}")
+
+                # Update all projects that reference this category
+                for project_name, project_info in parent_window.projects.items():
+                    if isinstance(project_info, dict):
+                        if project_info.get('category') == parts[0]:
+                            project_info['category'] = new_name
+                            logger.info(f"Updated project {project_name} category reference")
+
+                # Update all files that reference this category
+                for file_name, file_info in parent_window.files.items():
+                    if isinstance(file_info, dict):
+                        if file_info.get('category') == parts[0]:
+                            file_info['category'] = new_name
+                            logger.info(f"Updated file {file_name} category reference")
         else:
             # Rename subcategory
             current_level = parent_window.categories
@@ -844,11 +858,70 @@ def rename_category_action(context, column_browser, parent_window):
                 current_level[new_name] = current_level.pop(parts[-1])
                 logger.info(f"Renamed subcategory: {parts[-1]} -> {new_name}")
 
-        # Save changes
-        parent_window.config.save_categories(parent_window.categories)
+                # Build the old and new subcategory paths
+                old_subcat_path = parts[-1]
+                new_subcat_path = new_name
+                category_name = parts[0]
 
-        # Refresh interface
-        parent_window.reload_interface()
+                # If there are intermediate subcategories, build the full path
+                if len(parts) > 2:
+                    intermediate_path = ':'.join(parts[1:-1])
+                    old_subcat_path = f"{intermediate_path}:{old_subcat_path}"
+                    new_subcat_path = f"{intermediate_path}:{new_subcat_path}"
+
+                # Update all projects that reference this subcategory
+                for project_name, project_info in parent_window.projects.items():
+                    if isinstance(project_info, dict):
+                        if (project_info.get('category') == category_name and
+                            project_info.get('subcategory') == old_subcat_path):
+                            project_info['subcategory'] = new_subcat_path
+                            logger.info(f"Updated project {project_name} subcategory reference")
+
+                # Update all files that reference this subcategory
+                for file_name, file_info in parent_window.files.items():
+                    if isinstance(file_info, dict):
+                        if (file_info.get('category') == category_name and
+                            file_info.get('subcategory') == old_subcat_path):
+                            file_info['subcategory'] = new_subcat_path
+                            logger.info(f"Updated file {file_name} subcategory reference")
+
+        # Save all changes
+        parent_window.config.save_categories(parent_window.categories)
+        parent_window.config.save_projects(parent_window.projects)
+        parent_window.config.save_files(parent_window.files)
+
+        # Refresh only the affected columns instead of reloading everything
+        # Find and refresh columns that show this category
+        for column in parent_window.columns:
+            if hasattr(column, 'current_path') and column.current_path:
+                # Check if this column is affected by the rename
+                if len(parts) == 1:
+                    # Main category renamed - refresh root column and any column showing this category
+                    if column.current_path == "categories" or column.current_path is None:
+                        column.load_hierarchy_level(parent_window.categories, None, parent_window.projects, parent_window.files)
+                        logger.info("Refreshed root column after category rename")
+                    elif column.current_path.startswith(f"cat:{parts[0]}"):
+                        # Update the current_path to reflect the new name
+                        old_path = column.current_path
+                        new_path = old_path.replace(f"cat:{parts[0]}", f"cat:{new_name}", 1)
+                        column.current_path = new_path
+                        column.load_mixed_content(parent_window.categories, new_path, parent_window.projects, parent_window.files)
+                        logger.info(f"Refreshed column: {old_path} -> {new_path}")
+                else:
+                    # Subcategory renamed - refresh parent column and this column
+                    parent_path = f"cat:{':'.join(parts[:-1])}"
+                    current_path = f"cat:{':'.join(parts)}"
+
+                    if column.current_path == parent_path:
+                        column.load_mixed_content(parent_window.categories, parent_path, parent_window.projects, parent_window.files)
+                        logger.info(f"Refreshed parent column: {parent_path}")
+                    elif column.current_path.startswith(current_path):
+                        # Update the current_path to reflect the new name
+                        old_path = column.current_path
+                        new_path = old_path.replace(current_path, f"cat:{':'.join(parts[:-1])}:{new_name}", 1)
+                        column.current_path = new_path
+                        column.load_mixed_content(parent_window.categories, new_path, parent_window.projects, parent_window.files)
+                        logger.info(f"Refreshed column: {old_path} -> {new_path}")
 
     except Exception as e:
         logger.error(f"Error renaming category: {e}", exc_info=True)

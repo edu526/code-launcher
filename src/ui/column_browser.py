@@ -48,6 +48,9 @@ class ColumnBrowser(Gtk.ScrolledWindow):
         selection = self.treeview.get_selection()
         selection.connect("changed", self.on_selection_changed)
 
+        # Setup drag and drop for this column
+        self._setup_drag_and_drop()
+
         # Double click
         self.treeview.connect("row-activated", self.on_row_activated)
 
@@ -581,3 +584,115 @@ class ColumnBrowser(Gtk.ScrolledWindow):
                     hierarchy_info['subcategory_path'] = ":".join(parts[1:])
 
         return hierarchy_info
+
+
+    def _setup_drag_and_drop(self):
+        """Setup drag and drop for this column"""
+        import logging
+        from gi.repository import Gdk
+
+        logger = logging.getLogger(__name__)
+
+        # Define target types for drag and drop
+        targets = [
+            Gtk.TargetEntry.new("text/uri-list", 0, 0)
+        ]
+
+        # Enable drag and drop on the treeview
+        self.treeview.drag_dest_set(
+            Gtk.DestDefaults.ALL,
+            targets,
+            Gdk.DragAction.COPY
+        )
+
+        # Connect drag and drop signals
+        self.treeview.connect("drag-data-received", self._on_drag_data_received)
+        self.treeview.connect("drag-motion", self._on_drag_motion)
+
+    def _on_drag_motion(self, widget, context, x, y, time):
+        """Handle drag motion to show visual feedback"""
+        from gi.repository import Gdk
+        Gdk.drag_status(context, Gdk.DragAction.COPY, time)
+        return True
+
+    def _on_drag_data_received(self, widget, context, x, y, data, info, time):
+        """Handle dropped files or folders on this column"""
+        import logging
+        import os
+        import urllib.parse
+        from gi.repository import Gtk
+
+        logger = logging.getLogger(__name__)
+
+        try:
+            if not self.parent_window:
+                logger.warning("No parent window reference for drag and drop")
+                Gtk.drag_finish(context, False, False, time)
+                return
+
+            uris = data.get_uris()
+            if not uris:
+                logger.warning("No URIs received in drag and drop")
+                Gtk.drag_finish(context, False, False, time)
+                return
+
+            logger.info(f"Column received {len(uris)} items via drag and drop")
+
+            # Get pre_config from this column's current state
+            pre_config = self._get_pre_config_for_drop()
+            logger.info(f"Drop pre_config: {pre_config}")
+
+            # Process each dropped item
+            for uri in uris:
+                # Convert URI to path
+                if uri.startswith('file://'):
+                    path = uri[7:]  # Remove 'file://' prefix
+                    # Decode URL encoding
+                    path = urllib.parse.unquote(path)
+
+                    logger.info(f"Processing dropped item: {path}")
+
+                    if os.path.isdir(path):
+                        self.parent_window._add_project_from_drop(path, pre_config)
+                    elif os.path.isfile(path):
+                        self.parent_window._add_file_from_drop(path, pre_config)
+                    else:
+                        logger.warning(f"Dropped item is neither file nor directory: {path}")
+
+            Gtk.drag_finish(context, True, False, time)
+
+        except Exception as e:
+            logger.error(f"Error handling drag and drop in column: {e}", exc_info=True)
+            Gtk.drag_finish(context, False, False, time)
+
+    def _get_pre_config_for_drop(self):
+        """Extract pre_config from this column's current state"""
+        import logging
+        logger = logging.getLogger(__name__)
+
+        try:
+            current_path = self.current_path
+            if not current_path or current_path == "categories":
+                # Root column - no pre-selection
+                return None
+
+            # Parse the current path to extract category/subcategory
+            if current_path.startswith('cat:'):
+                parts = current_path[4:].split('/')
+                if len(parts) == 1 and ':' not in parts[0]:
+                    # Category only (e.g., "cat:Work")
+                    return {'category': parts[0], 'subcategory': None}
+                else:
+                    # Parse with colons (e.g., "cat:Work:Backend")
+                    path_parts = current_path[4:].split(':')
+                    if len(path_parts) == 1:
+                        # Category only
+                        return {'category': path_parts[0], 'subcategory': None}
+                    elif len(path_parts) >= 2:
+                        # Category and subcategory
+                        return {'category': path_parts[0], 'subcategory': path_parts[1]}
+
+            return None
+        except Exception as e:
+            logger.error(f"Error extracting pre_config from column: {e}")
+            return None

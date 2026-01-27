@@ -9,7 +9,7 @@ from gi.repository import Gtk
 import os
 
 
-def show_add_project_dialog(parent, categories, on_add_callback, pre_config=None):
+def show_add_project_dialog(parent, categories, on_add_callback, pre_config=None, default_name=None, default_path=None):
     """Show dialog to add new project
 
     Args:
@@ -22,6 +22,8 @@ def show_add_project_dialog(parent, categories, on_add_callback, pre_config=None
                 'subcategory': str | None,      # Pre-select subcategory
                 'hierarchy_path': str | None    # Full hierarchy path
             }
+        default_name: Optional default project name
+        default_path: Optional default project path
     """
     # Extract pre-configuration parameters
     pre_category = None
@@ -71,6 +73,12 @@ def show_add_project_dialog(parent, categories, on_add_callback, pre_config=None
     path_entry.set_sensitive(False)  # Disabled - auto-filled
     path_entry.set_placeholder_text("Will be auto-filled when selecting folder")
     content.pack_start(path_entry, False, False, 0)
+
+    # Set default values if provided (from drag and drop)
+    if default_name:
+        name_entry.set_text(default_name)
+    if default_path:
+        path_entry.set_text(default_path)
 
     # Button to select folder
     def on_select_folder(button):

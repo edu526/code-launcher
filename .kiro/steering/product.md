@@ -9,14 +9,15 @@ Code Launcher is a GTK-based project launcher for Linux that provides a Finder-s
 - Smart search with text normalization (finds "e-portal" when searching "eportal")
 - Context menu system for quick actions (add, delete, rename, open)
 - Visual icon selector for categories
+- Drag and drop support for adding projects and files from file manager
 - Configurable default editor preferences:
   - Project editor (Kiro or VSCode) for folders
-  - Text editor (gedit, kate, nano, vim, emacs, VSCode, Kiro) for files
+  - Text editor (gnome-text-editor, gedit, kate, nano, vim, emacs, VSCode, Kiro) for files
 - Single-instance application with window focus management
 
 ## User Workflow
 
-Users organize projects and files into categories → subcategories → projects/files, navigate through columns, and double-click or use context menus to open them in their preferred editor.
+Users organize projects and files into categories → subcategories → projects/files, navigate through columns, and double-click or use context menus to open them in their preferred editor. Projects and files can also be added by dragging them from the file manager directly into the application window.
 
 ## Configuration
 

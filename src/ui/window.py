@@ -141,6 +141,241 @@ class FinderStyleWindow(Gtk.Window):
 
         vbox.pack_start(scroll, True, True, 0)
 
+    def _setup_drag_and_drop(self):
+        """Setup drag and drop functionality"""
+        # Define target types for drag and drop
+        targets = [
+            Gtk.TargetEntry.new("text/uri-list", 0, 0)
+        ]
+
+        # Enable drag and drop on the columns container
+        self.columns_box.drag_dest_set(
+            Gtk.DestDefaults.ALL,
+            targets,
+            Gdk.DragAction.COPY
+        )
+
+        # Connect drag and drop signals
+        self.columns_box.connect("drag-data-received", self._on_drag_data_received)
+        self.columns_box.connect("drag-motion", self._on_drag_motion)
+
+    def _on_drag_motion(self, widget, context, x, y, time):
+        """Handle drag motion to show visual feedback"""
+        Gdk.drag_status(context, Gdk.DragAction.COPY, time)
+        return True
+
+    def _get_drop_target_column(self, x, y):
+        """Determine which column the drop occurred on"""
+        try:
+            # Get the column at the drop position
+            for column in self.columns:
+                allocation = column.get_allocation()
+                if x >= allocation.x and x <= allocation.x + allocation.width:
+                    return column
+            # Default to first column if no match
+            return self.columns[0] if self.columns else None
+        except Exception as e:
+            logger.error(f"Error determining drop target column: {e}")
+            return None
+
+    def _get_pre_config_from_column(self, column):
+        """Extract pre_config from a column's current state"""
+        if not column:
+            return None
+
+        try:
+            current_path = getattr(column, 'current_path', None)
+            if not current_path:
+                return None
+
+            # Parse the current path to extract category/subcategory
+            if current_path.startswith('cat:'):
+                parts = current_path[4:].split('/')
+                if len(parts) == 1:
+                    # Category only
+                    return {'category': parts[0], 'subcategory': None}
+                elif len(parts) >= 2:
+                    # Category and subcategory
+                    return {'category': parts[0], 'subcategory': parts[1]}
+
+            return None
+        except Exception as e:
+            logger.error(f"Error extracting pre_config from column: {e}")
+            return None
+
+    def _on_drag_data_received(self, widget, context, x, y, data, info, time):
+        """Handle dropped files or folders"""
+        try:
+            uris = data.get_uris()
+            if not uris:
+                logger.warning("No URIs received in drag and drop")
+                Gtk.drag_finish(context, False, False, time)
+                return
+
+            logger.info(f"Received {len(uris)} items via drag and drop")
+
+            # Determine which column received the drop
+            target_column = self._get_drop_target_column(x, y)
+            pre_config = self._get_pre_config_from_column(target_column)
+
+            # Process each dropped item
+            for uri in uris:
+                # Convert URI to path
+                if uri.startswith('file://'):
+                    path = uri[7:]  # Remove 'file://' prefix
+                    # Decode URL encoding
+                    import urllib.parse
+                    path = urllib.parse.unquote(path)
+
+                    logger.info(f"Processing dropped item: {path}")
+
+                    if os.path.isdir(path):
+                        self._add_project_from_drop(path, pre_config)
+                    elif os.path.isfile(path):
+                        self._add_file_from_drop(path, pre_config)
+                    else:
+                        logger.warning(f"Dropped item is neither file nor directory: {path}")
+
+            Gtk.drag_finish(context, True, False, time)
+
+        except Exception as e:
+            logger.error(f"Error handling drag and drop: {e}", exc_info=True)
+            Gtk.drag_finish(context, False, False, time)
+
+    def _add_project_from_drop(self, path, pre_config=None):
+        """Add a project from a dropped folder"""
+        from src.dialogs.project_dialog import show_add_project_dialog
+
+        # Get project name from path
+        project_name = os.path.basename(path)
+
+        # Show dialog to confirm and select category
+        def on_add_callback(name, project_info):
+            try:
+                self.projects[name] = project_info
+                self.config.save_projects(self.projects)
+
+                # Refresh only the affected column instead of reloading everything
+                project_category = project_info.get('category')
+                project_subcategory = project_info.get('subcategory')
+
+                # Find the column that should be refreshed
+                if not project_category:
+                    # No category - refresh root column
+                    if len(self.columns) > 0:
+                        first_column = self.columns[0]
+                        first_column.load_hierarchy_level(self.categories, None, self.projects, self.files)
+                        logger.info(f"Refreshed root column for root-level project")
+                else:
+                    # Has category - find and refresh the appropriate column
+                    for column in self.columns:
+                        if hasattr(column, 'current_path') and column.current_path:
+                            # Check if this column matches the project's category/subcategory
+                            if project_subcategory:
+                                # Check for exact match with subcategory
+                                expected_path = f"cat:{project_category}:{project_subcategory}"
+                                if column.current_path == expected_path:
+                                    column.load_mixed_content(
+                                        self.categories,
+                                        column.current_path,
+                                        self.projects,
+                                        self.files
+                                    )
+                                    logger.info(f"Refreshed column for {expected_path}")
+                                    break
+                            else:
+                                # Check for category match
+                                expected_path = f"cat:{project_category}"
+                                if column.current_path == expected_path:
+                                    column.load_mixed_content(
+                                        self.categories,
+                                        column.current_path,
+                                        self.projects,
+                                        self.files
+                                    )
+                                    logger.info(f"Refreshed column for {expected_path}")
+                                    break
+
+                logger.info(f"Added project via drag and drop: {name}")
+            except Exception as e:
+                logger.error(f"Error saving dropped project: {e}", exc_info=True)
+
+        show_add_project_dialog(
+            self,
+            self.categories,
+            on_add_callback,
+            pre_config=pre_config,
+            default_name=project_name,
+            default_path=path
+        )
+
+    def _add_file_from_drop(self, path, pre_config=None):
+        """Add a file from a dropped file"""
+        from src.dialogs.file_dialog import show_add_file_dialog
+
+        # Get file name from path
+        file_name = os.path.basename(path)
+
+        # Show dialog to confirm and select category
+        def on_add_callback(name, file_info):
+            try:
+                self.files[name] = file_info
+                self.config.save_files(self.files)
+
+                # Refresh only the affected column instead of reloading everything
+                file_category = file_info.get('category')
+                file_subcategory = file_info.get('subcategory')
+
+                # Find the column that should be refreshed
+                if not file_category:
+                    # No category - refresh root column
+                    if len(self.columns) > 0:
+                        first_column = self.columns[0]
+                        first_column.load_hierarchy_level(self.categories, None, self.projects, self.files)
+                        logger.info(f"Refreshed root column for root-level file")
+                else:
+                    # Has category - find and refresh the appropriate column
+                    for column in self.columns:
+                        if hasattr(column, 'current_path') and column.current_path:
+                            # Check if this column matches the file's category/subcategory
+                            if file_subcategory:
+                                # Check for exact match with subcategory
+                                expected_path = f"cat:{file_category}:{file_subcategory}"
+                                if column.current_path == expected_path:
+                                    column.load_mixed_content(
+                                        self.categories,
+                                        column.current_path,
+                                        self.projects,
+                                        self.files
+                                    )
+                                    logger.info(f"Refreshed column for {expected_path}")
+                                    break
+                            else:
+                                # Check for category match
+                                expected_path = f"cat:{file_category}"
+                                if column.current_path == expected_path:
+                                    column.load_mixed_content(
+                                        self.categories,
+                                        column.current_path,
+                                        self.projects,
+                                        self.files
+                                    )
+                                    logger.info(f"Refreshed column for {expected_path}")
+                                    break
+
+                logger.info(f"Added file via drag and drop: {name}")
+            except Exception as e:
+                logger.error(f"Error saving dropped file: {e}", exc_info=True)
+
+        show_add_file_dialog(
+            self,
+            self.categories,
+            on_add_callback,
+            pre_config=pre_config,
+            default_name=file_name,
+            default_path=path
+        )
+
     def on_show_center(self, widget):
         """Center window when shown"""
         GLib.timeout_add(50, self.center_window)
