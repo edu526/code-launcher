@@ -8,7 +8,7 @@ gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
 
 import logging
-from src.dialogs import show_create_category_dialog, show_add_project_dialog
+from src.dialogs import show_create_category_dialog, show_add_project_dialog, show_add_file_dialog
 from .context_detector import get_hierarchy_info, ROOT_COLUMN, CHILD_COLUMN, CATEGORY_ITEM
 
 logger = logging.getLogger(__name__)
@@ -125,14 +125,15 @@ def create_category_action(context, column_browser, parent_window):
                     # Creating a root category - reload the first column
                     if len(parent_window.columns) > 0:
                         first_column = parent_window.columns[0]
-                        first_column.load_hierarchy_level(parent_window.categories, None)
+                        first_column.load_hierarchy_level(parent_window.categories, None, parent_window.projects, parent_window.files)
                 else:
                     # Creating a subcategory - reload the current column with mixed content
                     if hasattr(column_browser, 'load_mixed_content'):
                         column_browser.load_mixed_content(
                             parent_window.categories,
                             column_browser.current_path,
-                            parent_window.projects
+                            parent_window.projects,
+                            parent_window.files
                         )
 
                 logger.info(f"Category created: {name} (parent: {parent_category})")
@@ -174,25 +175,22 @@ def add_project_action(context, column_browser, parent_window):
         pre_config = {}
 
         if context_type == ROOT_COLUMN:
-            # Root column - no category pre-selected
+            # Root column empty area - add to root (no category)
             pre_config['category'] = None
             pre_config['subcategory'] = None
             pre_config['hierarchy_path'] = hierarchy_path
 
         elif context_type == CHILD_COLUMN:
-            # Child column - pre-select category and subcategory based on current hierarchy
+            # Child column empty area - add under the parent category being viewed
             hierarchy_info = get_hierarchy_info(hierarchy_path)
 
-            # Set category
+            # Pre-select the category/subcategory based on current hierarchy
             pre_config['category'] = hierarchy_info['category']
-
-            # Set subcategory if we're in a nested level
             pre_config['subcategory'] = hierarchy_info['subcategory_path']
-
             pre_config['hierarchy_path'] = hierarchy_path
 
         elif context_type == CATEGORY_ITEM:
-            # Category item - pre-select based on the clicked item
+            # Category item clicked - pre-select that category
             item_path = context.get('item_path')
 
             if item_path and item_path.startswith("cat:"):
@@ -237,10 +235,16 @@ def add_project_action(context, column_browser, parent_window):
                 # Refresh the appropriate column
                 # Check if we're in root column (categories view)
                 if column_browser.current_path == "categories" or column_browser.current_path is None:
-                    # In root column - need to refresh the child column if it exists
+                    # In root column - need to refresh it if project has no category, or refresh child column if it has category
                     project_category = project_info.get('category')
 
-                    if project_category and len(parent_window.columns) > 1:
+                    if not project_category:
+                        # No category - refresh the root column to show the new project
+                        if len(parent_window.columns) > 0:
+                            first_column = parent_window.columns[0]
+                            first_column.load_hierarchy_level(parent_window.categories, None, parent_window.projects, parent_window.files)
+                            logger.info(f"Refreshed root column for root-level project")
+                    elif project_category and len(parent_window.columns) > 1:
                         # There's a second column showing content for a category
                         # Check if it matches the project's category
                         second_column = parent_window.columns[1]
@@ -249,7 +253,8 @@ def add_project_action(context, column_browser, parent_window):
                             second_column.load_mixed_content(
                                 parent_window.categories,
                                 second_column.current_path,
-                                parent_window.projects
+                                parent_window.projects,
+                                parent_window.files
                             )
                             logger.info(f"Refreshed second column for category: {project_category}")
 
@@ -260,7 +265,8 @@ def add_project_action(context, column_browser, parent_window):
                         column_browser.load_mixed_content(
                             parent_window.categories,
                             column_browser.current_path,
-                            parent_window.projects
+                            parent_window.projects,
+                            parent_window.files
                         )
 
                 logger.info(f"Project added: {name} (category: {project_info.get('category')}, subcategory: {project_info.get('subcategory')})")
@@ -280,6 +286,127 @@ def add_project_action(context, column_browser, parent_window):
     except Exception as e:
         logger.error(f"Error in add project action: {e}", exc_info=True)
         show_error_dialog(parent_window, f"Error opening project dialog: {e}")
+
+
+def add_file_action(context, column_browser, parent_window):
+    """
+    Handle add file action from context menu
+
+    Args:
+        context: Context dictionary with hierarchy information
+        column_browser: ColumnBrowser instance
+        parent_window: FinderStyleWindow instance
+    """
+    try:
+        logger.info(f"Add file action triggered with context: {context}")
+
+        hierarchy_path = context.get('hierarchy_path')
+        context_type = context.get('type')
+
+        pre_config = {}
+
+        if context_type == ROOT_COLUMN:
+            # Root column empty area - add to root (no category)
+            pre_config['category'] = None
+            pre_config['subcategory'] = None
+            pre_config['hierarchy_path'] = hierarchy_path
+
+        elif context_type == CHILD_COLUMN:
+            # Child column empty area - add under the parent category being viewed
+            hierarchy_info = get_hierarchy_info(hierarchy_path)
+
+            # Pre-select the category/subcategory based on current hierarchy
+            pre_config['category'] = hierarchy_info['category']
+            pre_config['subcategory'] = hierarchy_info['subcategory_path']
+            pre_config['hierarchy_path'] = hierarchy_path
+
+        elif context_type == CATEGORY_ITEM:
+            # Category item clicked - pre-select that category
+            item_path = context.get('item_path')
+
+            if item_path and item_path.startswith("cat:"):
+                parts = item_path.split(":")[1:]
+
+                if len(parts) >= 1:
+                    pre_config['category'] = parts[0]
+                    if len(parts) > 1:
+                        pre_config['subcategory'] = ":".join(parts[1:])
+                    else:
+                        pre_config['subcategory'] = None
+                else:
+                    pre_config['category'] = None
+                    pre_config['subcategory'] = None
+            else:
+                pre_config['category'] = None
+                pre_config['subcategory'] = None
+
+            pre_config['hierarchy_path'] = item_path
+
+        else:
+            pre_config['category'] = None
+            pre_config['subcategory'] = None
+            pre_config['hierarchy_path'] = hierarchy_path
+
+        logger.debug(f"Pre-config for add file dialog: {pre_config}")
+
+        logger.debug(f"Pre-config for add file dialog: {pre_config}")
+
+        def on_add_callback(name, file_info):
+            """Wrapper callback for adding files"""
+            try:
+                if not hasattr(parent_window, 'files'):
+                    parent_window.files = {}
+
+                parent_window.files[name] = file_info
+                parent_window.config.save_files(parent_window.files)
+
+                # Refresh the appropriate column
+                if column_browser.current_path == "categories" or column_browser.current_path is None:
+                    file_category = file_info.get('category')
+
+                    if not file_category:
+                        # No category - refresh the root column to show the new file
+                        if len(parent_window.columns) > 0:
+                            first_column = parent_window.columns[0]
+                            first_column.load_hierarchy_level(parent_window.categories, None, parent_window.projects, parent_window.files)
+                            logger.info(f"Refreshed root column for root-level file")
+                    elif file_category and len(parent_window.columns) > 1:
+                        second_column = parent_window.columns[1]
+                        if second_column.current_path and second_column.current_path.startswith(f"cat:{file_category}"):
+                            second_column.load_mixed_content(
+                                parent_window.categories,
+                                second_column.current_path,
+                                parent_window.projects,
+                                parent_window.files
+                            )
+                            logger.info(f"Refreshed second column for category: {file_category}")
+
+                    logger.info(f"File added from root: {name}")
+                else:
+                    if hasattr(column_browser, 'load_mixed_content'):
+                        column_browser.load_mixed_content(
+                            parent_window.categories,
+                            column_browser.current_path,
+                            parent_window.projects,
+                            parent_window.files
+                        )
+
+                logger.info(f"File added: {name} (category: {file_info.get('category')}, subcategory: {file_info.get('subcategory')})")
+
+            except Exception as e:
+                logger.error(f"Error adding file: {e}", exc_info=True)
+                show_error_dialog(parent_window, f"Error adding file: {e}")
+
+        show_add_file_dialog(
+            parent_window,
+            parent_window.categories,
+            on_add_callback,
+            pre_config=pre_config
+        )
+
+    except Exception as e:
+        logger.error(f"Error in add file action: {e}", exc_info=True)
+        show_error_dialog(parent_window, f"Error opening file dialog: {e}")
 
 
 def open_vscode_action(context, parent_window):
@@ -348,6 +475,50 @@ def open_kiro_action(context, parent_window):
     except Exception as e:
         logger.error(f"Error opening project in Kiro: {e}", exc_info=True)
         show_error_dialog(parent_window, f"Error opening project in Kiro: {e}")
+
+
+def open_file_action(context, parent_window):
+    """
+    Handle open file action from context menu
+
+    Args:
+        context: Context dictionary with file path
+        parent_window: FinderStyleWindow instance
+    """
+    logger.info(f"Open file action triggered with context: {context}")
+
+    try:
+        file_path = context.get('item_path')
+
+        if not file_path:
+            logger.error("No file path found in context")
+            show_error_dialog(parent_window, "Error: File path not found")
+            return
+
+        logger.debug(f"Opening file: {file_path}")
+
+        # Get the default text editor from preferences
+        preferences = parent_window.config.load_preferences()
+        text_editor = preferences.get("default_text_editor", "gnome-text-editor")
+
+        # Import text editor utils
+        from utils.text_editor_utils import open_file_in_editor
+
+        success = open_file_in_editor(file_path, text_editor)
+
+        if success:
+            logger.info(f"Successfully opened file in {text_editor}: {file_path}")
+
+            # Close launcher if preference is set
+            if hasattr(parent_window, 'close_on_open') and parent_window.close_on_open:
+                parent_window.destroy()
+        else:
+            logger.warning(f"Failed to open file in {text_editor}: {file_path}")
+            show_error_dialog(parent_window, f"Error: Could not open file with {text_editor}")
+
+    except Exception as e:
+        logger.error(f"Error opening file: {e}", exc_info=True)
+        show_error_dialog(parent_window, f"Error opening file: {e}")
 
 
 def open_in_terminal(context, parent_window):
@@ -752,9 +923,88 @@ def delete_project_action(context, column_browser, parent_window):
                 column_browser.load_mixed_content(
                     parent_window.categories,
                     column_browser.current_path,
-                    parent_window.projects
+                    parent_window.projects,
+                    parent_window.files
                 )
 
     except Exception as e:
         logger.error(f"Error deleting project: {e}", exc_info=True)
         show_error_dialog(parent_window, f"Error deleting project: {e}")
+
+
+def delete_file_action(context, column_browser, parent_window):
+    """
+    Handle delete file action
+
+    Args:
+        context: Context dictionary with file information
+        column_browser: ColumnBrowser instance
+        parent_window: FinderStyleWindow instance
+    """
+    try:
+        logger.info(f"Delete file action triggered with context: {context}")
+
+        file_path = context.get('item_path')
+
+        if not file_path:
+            logger.error("No file path found in context")
+            return
+
+        # Find file name
+        file_name = None
+        if hasattr(parent_window, 'files'):
+            for name, info in parent_window.files.items():
+                if isinstance(info, str):
+                    if info == file_path:
+                        file_name = name
+                        break
+                else:
+                    if info.get("path") == file_path:
+                        file_name = name
+                        break
+
+        if not file_name:
+            logger.error(f"File not found for path: {file_path}")
+            show_error_dialog(parent_window, "File not found")
+            return
+
+        # Confirmation dialog
+        dialog = Gtk.MessageDialog(
+            transient_for=parent_window,
+            flags=0,
+            message_type=Gtk.MessageType.WARNING,
+            buttons=Gtk.ButtonsType.YES_NO,
+            text=f"Delete file '{file_name}'?"
+        )
+        dialog.format_secondary_text(
+            "This action will only remove the file from the list.\n"
+            "The file on disk will NOT be deleted."
+        )
+        dialog.set_position(Gtk.WindowPosition.CENTER_ON_PARENT)
+
+        response = dialog.run()
+        dialog.destroy()
+
+        if response != Gtk.ResponseType.YES:
+            return
+
+        # Delete the file
+        if file_name in parent_window.files:
+            del parent_window.files[file_name]
+            logger.info(f"Deleted file: {file_name}")
+
+            # Save changes
+            parent_window.config.save_files(parent_window.files)
+
+            # Refresh current column
+            if hasattr(column_browser, 'load_mixed_content'):
+                column_browser.load_mixed_content(
+                    parent_window.categories,
+                    column_browser.current_path,
+                    parent_window.projects,
+                    parent_window.files
+                )
+
+    except Exception as e:
+        logger.error(f"Error deleting file: {e}", exc_info=True)
+        show_error_dialog(parent_window, f"Error deleting file: {e}")

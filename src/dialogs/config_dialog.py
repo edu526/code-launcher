@@ -331,6 +331,7 @@ def show_preferences_dialog(parent, config_manager, terminal_manager=None):
     # Load current preferences
     preferences = config_manager.load_preferences()
     current_editor = preferences.get("default_editor", "kiro")
+    current_text_editor = preferences.get("default_text_editor", "gedit")
     close_on_open = preferences.get("close_on_open", False)
 
     # Editor Preferences Section
@@ -342,11 +343,11 @@ def show_preferences_dialog(parent, config_manager, terminal_manager=None):
     editor_label.set_halign(Gtk.Align.START)
     editor_section.pack_start(editor_label, False, False, 0)
 
-    # Editor selection container
+    # Project editor selection container
     editor_selection_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
 
     # Editor selection label
-    editor_select_label = Gtk.Label(label="Default editor:")
+    editor_select_label = Gtk.Label(label="Default editor (projects):")
     editor_select_label.set_halign(Gtk.Align.START)
     editor_selection_box.pack_start(editor_select_label, False, False, 0)
 
@@ -365,6 +366,37 @@ def show_preferences_dialog(parent, config_manager, terminal_manager=None):
     editor_selection_box.pack_start(editor_combo, True, True, 0)
     editor_section.pack_start(editor_selection_box, False, False, 0)
 
+    # Text editor selection container
+    text_editor_selection_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+
+    # Text editor selection label
+    text_editor_select_label = Gtk.Label(label="Default editor (files):")
+    text_editor_select_label.set_halign(Gtk.Align.START)
+    text_editor_selection_box.pack_start(text_editor_select_label, False, False, 0)
+
+    # Text editor dropdown
+    text_editor_combo = Gtk.ComboBoxText()
+    text_editor_combo.set_hexpand(True)
+    text_editor_combo.append_text("GNOME Text Editor")
+    text_editor_combo.append_text("gedit")
+    text_editor_combo.append_text("kate")
+    text_editor_combo.append_text("nano")
+    text_editor_combo.append_text("vim")
+    text_editor_combo.append_text("emacs")
+    text_editor_combo.append_text("VSCode")
+    text_editor_combo.append_text("Kiro")
+
+    # Set current selection for text editor
+    text_editors = ["gnome-text-editor", "gedit", "kate", "nano", "vim", "emacs", "vscode", "kiro"]
+    try:
+        text_editor_index = text_editors.index(current_text_editor.lower())
+        text_editor_combo.set_active(text_editor_index)
+    except ValueError:
+        text_editor_combo.set_active(0)
+
+    text_editor_selection_box.pack_start(text_editor_combo, True, True, 0)
+    editor_section.pack_start(text_editor_selection_box, False, False, 0)
+
     # Close on open checkbox
     close_on_open_check = Gtk.CheckButton(label="Close launcher when opening a project")
     close_on_open_check.set_active(close_on_open)
@@ -372,7 +404,7 @@ def show_preferences_dialog(parent, config_manager, terminal_manager=None):
 
     # Editor info label
     editor_info_label = Gtk.Label()
-    editor_info_label.set_markup("<small><i>The selected editor will open on double click on a project.</i></small>")
+    editor_info_label.set_markup("<small><i>Project editor opens folders, text editor opens individual files.</i></small>")
     editor_info_label.set_halign(Gtk.Align.START)
     editor_info_label.set_line_wrap(True)
     editor_section.pack_start(editor_info_label, False, False, 5)
@@ -402,6 +434,11 @@ def show_preferences_dialog(parent, config_manager, terminal_manager=None):
         selected_editor_index = editor_combo.get_active()
         selected_editor = "kiro" if selected_editor_index == 0 else "vscode"
 
+        # Get text editor preference
+        text_editors = ["gnome-text-editor", "gedit", "kate", "nano", "vim", "emacs", "vscode", "kiro"]
+        selected_text_editor_index = text_editor_combo.get_active()
+        selected_text_editor = text_editors[selected_text_editor_index] if selected_text_editor_index >= 0 else "gnome-text-editor"
+
         # Get close on open preference
         close_on_open_value = close_on_open_check.get_active()
 
@@ -421,12 +458,15 @@ def show_preferences_dialog(parent, config_manager, terminal_manager=None):
         # Load current preferences AFTER applying terminal selection to get the updated values
         current_preferences = config_manager.load_preferences()
         current_preferences["default_editor"] = selected_editor
+        current_preferences["default_text_editor"] = selected_text_editor
         current_preferences["close_on_open"] = close_on_open_value
         config_manager.save_preferences(current_preferences)
 
         # Update parent window's preference
         if hasattr(parent, 'default_editor'):
             parent.default_editor = selected_editor
+        if hasattr(parent, 'default_text_editor'):
+            parent.default_text_editor = selected_text_editor
         if hasattr(parent, 'close_on_open'):
             parent.close_on_open = close_on_open_value
 

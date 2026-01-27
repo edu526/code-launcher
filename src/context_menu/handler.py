@@ -14,17 +14,21 @@ from .context_detector import (
     ROOT_COLUMN,
     CHILD_COLUMN,
     CATEGORY_ITEM,
-    PROJECT_ITEM
+    PROJECT_ITEM,
+    FILE_ITEM
 )
 from .actions import (
     create_category_action,
     add_project_action,
+    add_file_action,
     open_vscode_action,
     open_kiro_action,
+    open_file_action,
     open_in_terminal,
     delete_category_action,
     rename_category_action,
-    delete_project_action
+    delete_project_action,
+    delete_file_action
 )
 
 logger = logging.getLogger(__name__)
@@ -64,18 +68,22 @@ class ContextMenuHandler:
         logger.debug(f"Creating context menu for type: {context_type}")
 
         if context_type == ROOT_COLUMN:
-            # Root column menu: "Create category" and "Add project"
+            # Root column menu: "Create category", "Add project", and "Add file"
             self._add_menu_item(menu, "Create category",
                               lambda w: create_category_action(context, self.column_browser, self.parent_window))
             self._add_menu_item(menu, "Add project",
                               lambda w: add_project_action(context, self.column_browser, self.parent_window))
+            self._add_menu_item(menu, "Add file",
+                              lambda w: add_file_action(context, self.column_browser, self.parent_window))
 
         elif context_type == CHILD_COLUMN:
-            # Child column menu: "Add subcategory" and "Add project"
+            # Child column menu: "Add subcategory", "Add project", and "Add file"
             self._add_menu_item(menu, "Add subcategory",
                               lambda w: create_category_action(context, self.column_browser, self.parent_window))
             self._add_menu_item(menu, "Add project",
                               lambda w: add_project_action(context, self.column_browser, self.parent_window))
+            self._add_menu_item(menu, "Add file",
+                              lambda w: add_file_action(context, self.column_browser, self.parent_window))
 
         elif context_type == CATEGORY_ITEM:
             # Category item menu: Multiple options
@@ -83,6 +91,8 @@ class ContextMenuHandler:
                               lambda w: create_category_action(context, self.column_browser, self.parent_window))
             self._add_menu_item(menu, "Add project",
                               lambda w: add_project_action(context, self.column_browser, self.parent_window))
+            self._add_menu_item(menu, "Add file",
+                              lambda w: add_file_action(context, self.column_browser, self.parent_window))
 
             # Separator
             menu.append(Gtk.SeparatorMenuItem())
@@ -109,6 +119,17 @@ class ContextMenuHandler:
 
             self._add_menu_item(menu, "Delete project",
                               lambda w: delete_project_action(context, self.column_browser, self.parent_window))
+
+        elif context_type == FILE_ITEM:
+            # File item menu: Open and Delete
+            self._add_menu_item(menu, "Open",
+                              lambda w: open_file_action(context, self.parent_window))
+
+            # Separator
+            menu.append(Gtk.SeparatorMenuItem())
+
+            self._add_menu_item(menu, "Delete file",
+                              lambda w: delete_file_action(context, self.column_browser, self.parent_window))
 
         menu.show_all()
         return menu
@@ -201,6 +222,7 @@ class ContextMenuHandler:
                 path_info = self.column_browser.treeview.get_path_at_pos(int(event.x), int(event.y))
 
                 if path_info is not None:
+                    # Clicked on an item
                     tree_path, column, cell_x, cell_y = path_info
 
                     # Check if the clicked item is already selected
@@ -221,6 +243,11 @@ class ContextMenuHandler:
                         iter = model.get_iter(tree_path)
                         item_path = model.get_value(iter, 1)
                         self.column_browser.callback(item_path, True)
+                else:
+                    # Clicked on empty area - deselect any selected item
+                    logger.debug("Right-click on empty area - deselecting items")
+                    selection = self.column_browser.treeview.get_selection()
+                    selection.unselect_all()
 
                 # Detect the context of the click
                 context = detect_context(self.column_browser, event)

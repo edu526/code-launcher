@@ -39,9 +39,9 @@ class NavigationManager:
 
         # Mapeo de tipos a métodos de carga
         loaders = {
-            "categories": lambda: column.load_hierarchy_level(self.window.categories, None),
-            "hierarchy": lambda: column.load_hierarchy_level(self.window.categories, path),
-            "mixed": lambda: column.load_mixed_content(self.window.categories, path, self.window.projects),
+            "categories": lambda: column.load_hierarchy_level(self.window.categories, None, self.window.projects, self.window.files),
+            "hierarchy": lambda: column.load_hierarchy_level(self.window.categories, path, self.window.projects, self.window.files),
+            "mixed": lambda: column.load_mixed_content(self.window.categories, path, self.window.projects, self.window.files),
             "projects": lambda: column.load_projects_at_level(path, self.window.projects),
             "directory": lambda: column.load_directory(path)
         }
@@ -115,7 +115,8 @@ class NavigationManager:
                 existing_column.load_mixed_content(
                     self.window.categories,
                     hierarchy_path,
-                    self.window.projects
+                    self.window.projects,
+                    self.window.files
                 )
                 existing_column.current_path = hierarchy_path
 

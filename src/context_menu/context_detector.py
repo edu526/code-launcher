@@ -12,6 +12,7 @@ ROOT_COLUMN = "root_column"
 CHILD_COLUMN = "child_column"
 CATEGORY_ITEM = "category_item"
 PROJECT_ITEM = "project_item"
+FILE_ITEM = "file_item"
 
 
 def detect_context(column_browser, event):
@@ -25,22 +26,26 @@ def detect_context(column_browser, event):
     Returns:
         Dictionary with context information:
         {
-            'type': str,  # ROOT_COLUMN, CHILD_COLUMN, CATEGORY_ITEM, PROJECT_ITEM
+            'type': str,  # ROOT_COLUMN, CHILD_COLUMN, CATEGORY_ITEM, PROJECT_ITEM, FILE_ITEM
             'hierarchy_path': str,  # Current hierarchy path
             'item_path': str | None,  # Path of clicked item (if any)
-            'is_project': bool  # True if clicked item is a project
+            'is_project': bool,  # True if clicked item is a project
+            'is_file': bool  # True if clicked item is a file
         }
     """
     context = {
         'type': None,
         'hierarchy_path': None,
         'item_path': None,
-        'is_project': False
+        'is_project': False,
+        'is_file': False
     }
 
     # Get the current hierarchy path from the column
     current_path = column_browser.current_path
     context['hierarchy_path'] = current_path
+
+    logger.debug(f"Detecting context - current_path: {current_path}, is_root: {column_browser.is_root_column()}")
 
     # Try to get the item at the click position using helper method
     tree_path, column = column_browser.get_item_at_position(event.x, event.y)
@@ -50,23 +55,33 @@ def detect_context(column_browser, event):
         model = column_browser.treeview.get_model()
         iter = model.get_iter(tree_path)
         item_path = model.get_value(iter, 1)  # full_path column
+        item_icon = model.get_value(iter, 3)  # icon column
         context['item_path'] = item_path
 
-        # Determine if it's a project or category item
+        # Determine if it's a project, file, or category item
         if item_path.startswith("cat:"):
             context['type'] = CATEGORY_ITEM
             context['is_project'] = False
+            context['is_file'] = False
+        elif item_icon == "text-x-generic":
+            # It's a file (identified by icon)
+            context['type'] = FILE_ITEM
+            context['is_project'] = False
+            context['is_file'] = True
         else:
-            # It's a project (path doesn't start with "cat:")
+            # It's a project (path doesn't start with "cat:" and icon is not text-x-generic)
             context['type'] = PROJECT_ITEM
             context['is_project'] = True
+            context['is_file'] = False
     else:
         # Clicked on empty area of column
         # Determine if it's root or child column using helper method
         if column_browser.is_root_column():
             context['type'] = ROOT_COLUMN
+            logger.debug("Detected ROOT_COLUMN (empty area)")
         else:
             context['type'] = CHILD_COLUMN
+            logger.debug("Detected CHILD_COLUMN (empty area)")
 
     logger.debug(f"Detected context: {context}")
     return context

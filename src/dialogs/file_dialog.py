@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Project addition dialog
+File addition dialog
 """
 
 import gi
@@ -9,8 +9,8 @@ from gi.repository import Gtk
 import os
 
 
-def show_add_project_dialog(parent, categories, on_add_callback, pre_config=None):
-    """Show dialog to add new project
+def show_add_file_dialog(parent, categories, on_add_callback, pre_config=None):
+    """Show dialog to add new file
 
     Args:
         parent: Parent window
@@ -18,12 +18,11 @@ def show_add_project_dialog(parent, categories, on_add_callback, pre_config=None
         on_add_callback: Callback function
         pre_config: Optional dictionary with:
             {
-                'category': str | None,         # Pre-select category
-                'subcategory': str | None,      # Pre-select subcategory
-                'hierarchy_path': str | None    # Full hierarchy path
+                'category': str | None,
+                'subcategory': str | None,
+                'hierarchy_path': str | None
             }
     """
-    # Extract pre-configuration parameters
     pre_category = None
     pre_subcategory = None
     hierarchy_path = None
@@ -33,11 +32,10 @@ def show_add_project_dialog(parent, categories, on_add_callback, pre_config=None
         pre_category = pre_config.get('category')
         pre_subcategory = pre_config.get('subcategory')
         hierarchy_path = pre_config.get('hierarchy_path')
-        # Disable selection if ANY pre-configuration is provided (from context menu)
         disable_selection = pre_config is not None and (pre_category is not None or hierarchy_path is not None)
 
     dialog = Gtk.Dialog(
-        title="Add New Project",
+        title="Add New File",
         transient_for=parent,
         flags=0
     )
@@ -54,53 +52,53 @@ def show_add_project_dialog(parent, categories, on_add_callback, pre_config=None
     content.set_margin_top(10)
     content.set_margin_bottom(10)
 
-    # Project name
-    name_label = Gtk.Label(label="Project name:")
+    # File name
+    name_label = Gtk.Label(label="File name:")
     content.pack_start(name_label, False, False, 0)
 
     name_entry = Gtk.Entry()
-    name_entry.set_sensitive(False)  # Disabled - auto-filled
-    name_entry.set_placeholder_text("Will be auto-filled when selecting folder")
+    name_entry.set_sensitive(False)
+    name_entry.set_placeholder_text("Will be auto-filled when selecting file")
     content.pack_start(name_entry, False, False, 0)
 
-    # Project path
-    path_label = Gtk.Label(label="Project path:")
+    # File path
+    path_label = Gtk.Label(label="File path:")
     content.pack_start(path_label, False, False, 0)
 
     path_entry = Gtk.Entry()
-    path_entry.set_sensitive(False)  # Disabled - auto-filled
-    path_entry.set_placeholder_text("Will be auto-filled when selecting folder")
+    path_entry.set_sensitive(False)
+    path_entry.set_placeholder_text("Will be auto-filled when selecting file")
     content.pack_start(path_entry, False, False, 0)
 
-    # Button to select folder
-    def on_select_folder(button):
-        folder_dialog = Gtk.FileChooserDialog(
-            title="Select Project Folder",
+    # Button to select file
+    def on_select_file(button):
+        file_dialog = Gtk.FileChooserDialog(
+            title="Select File",
             parent=parent,
-            action=Gtk.FileChooserAction.SELECT_FOLDER
+            action=Gtk.FileChooserAction.OPEN
         )
-        folder_dialog.set_transient_for(parent)
-        folder_dialog.set_position(Gtk.WindowPosition.CENTER_ON_PARENT)
-        folder_dialog.add_buttons(
+        file_dialog.set_transient_for(parent)
+        file_dialog.set_position(Gtk.WindowPosition.CENTER_ON_PARENT)
+        file_dialog.add_buttons(
             Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
             Gtk.STOCK_OK, Gtk.ResponseType.OK
         )
 
-        response = folder_dialog.run()
+        response = file_dialog.run()
         if response == Gtk.ResponseType.OK:
-            folder = folder_dialog.get_filename()
-            path_entry.set_text(folder)
+            file_path = file_dialog.get_filename()
+            path_entry.set_text(file_path)
 
-            # Auto-populate project name from directory name
-            dir_name = os.path.basename(folder)
-            if dir_name:
-                name_entry.set_text(dir_name)
+            # Auto-populate file name
+            file_name = os.path.basename(file_path)
+            if file_name:
+                name_entry.set_text(file_name)
 
-        folder_dialog.destroy()
+        file_dialog.destroy()
 
-    folder_btn = Gtk.Button(label="Select Folder...")
-    folder_btn.connect("clicked", on_select_folder)
-    content.pack_start(folder_btn, False, False, 0)
+    file_btn = Gtk.Button(label="Select File...")
+    file_btn.connect("clicked", on_select_file)
+    content.pack_start(file_btn, False, False, 0)
 
     # Category and Subcategory
     cat_label = Gtk.Label(label="Category:")
@@ -115,7 +113,6 @@ def show_add_project_dialog(parent, categories, on_add_callback, pre_config=None
     for cat_name in sorted_categories:
         cat_combo.append_text(cat_name)
 
-    # Pre-select category if provided
     if pre_category and pre_category in categories:
         try:
             # +1 because index 0 is "(None)"
@@ -127,7 +124,6 @@ def show_add_project_dialog(parent, categories, on_add_callback, pre_config=None
         # No pre-selection - select "(None)" for root level
         cat_combo.set_active(0)
 
-    # Disable category selection if pre-configured
     if disable_selection:
         cat_combo.set_sensitive(False)
 
@@ -137,13 +133,13 @@ def show_add_project_dialog(parent, categories, on_add_callback, pre_config=None
     content.pack_start(subcat_label, False, False, 0)
 
     subcat_combo = Gtk.ComboBoxText()
-    subcat_combo.append_text("")  # Empty option for no subcategory
+    subcat_combo.append_text("")
 
     def update_subcategories(combo):
         """Update subcategories based on selected category"""
         cat_name = cat_combo.get_active_text()
         subcat_combo.remove_all()
-        subcat_combo.append_text("")  # Empty option
+        subcat_combo.append_text("")
 
         if cat_name and cat_name in categories:
             subcategories = categories[cat_name].get("subcategories", {})
@@ -151,10 +147,8 @@ def show_add_project_dialog(parent, categories, on_add_callback, pre_config=None
             for sub_name in sorted_subcats:
                 subcat_combo.append_text(sub_name)
 
-            # Pre-select subcategory if provided and category matches
             if pre_subcategory and pre_subcategory in subcategories:
                 try:
-                    # +1 because index 0 is the empty option
                     sub_index = sorted_subcats.index(pre_subcategory) + 1
                     subcat_combo.set_active(sub_index)
                 except ValueError:
@@ -162,14 +156,13 @@ def show_add_project_dialog(parent, categories, on_add_callback, pre_config=None
             else:
                 subcat_combo.set_active(0)
 
-            # Disable subcategory selection if pre-configured
             if disable_selection:
                 subcat_combo.set_sensitive(False)
         else:
             subcat_combo.set_active(0)
 
     cat_combo.connect("changed", update_subcategories)
-    update_subcategories(None)  # Load initial subcategories
+    update_subcategories(None)
 
     content.pack_start(subcat_combo, False, False, 0)
 
@@ -183,19 +176,19 @@ def show_add_project_dialog(parent, categories, on_add_callback, pre_config=None
         subcategory = subcat_combo.get_active_text()
 
         if name and path:
-            project_info = {
+            file_info = {
                 "path": path
             }
 
             # Only add category if it's not "(None)"
             if category and category != "(None)":
-                project_info["category"] = category
+                file_info["category"] = category
 
                 # Only add subcategory if category exists and subcategory is not empty
                 if subcategory:
-                    project_info["subcategory"] = subcategory
+                    file_info["subcategory"] = subcategory
 
             if on_add_callback:
-                on_add_callback(name, project_info)
+                on_add_callback(name, file_info)
 
     dialog.destroy()

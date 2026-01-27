@@ -10,6 +10,7 @@ import json
 # Configuration paths
 CONFIG_DIR = os.path.expanduser("~/.config/code-launcher")
 PROJECTS_FILE = os.path.expanduser("~/.config/code-launcher/projects.json")
+FILES_FILE = os.path.expanduser("~/.config/code-launcher/files.json")
 CATEGORIES_FILE = os.path.expanduser("~/.config/code-launcher/categories.json")
 PREFERENCES_FILE = os.path.expanduser("~/.config/code-launcher/preferences.json")
 LOCK_FILE = os.path.expanduser("~/.config/code-launcher/launcher.lock")
@@ -61,10 +62,26 @@ class ConfigManager:
         with open(PROJECTS_FILE, 'w') as f:
             json.dump(projects, f, indent=2)
 
+    def load_files(self):
+        """Load files from configuration"""
+        if os.path.exists(FILES_FILE):
+            try:
+                with open(FILES_FILE, 'r') as f:
+                    return json.load(f)
+            except:
+                pass
+        return {}
+
+    def save_files(self, files):
+        """Save files"""
+        with open(FILES_FILE, 'w') as f:
+            json.dump(files, f, indent=2)
+
     def load_preferences(self):
         """Load user preferences with validation and defaults"""
         default_preferences = {
-            "default_editor": "kiro",  # "kiro" or "vscode"
+            "default_editor": "kiro",  # "kiro" or "vscode" for projects
+            "default_text_editor": "gnome-text-editor",  # Text editor for files
             "close_on_open": False,  # Close launcher when opening a project
             "terminal": {
                 "preferred": None,
@@ -108,6 +125,10 @@ class ConfigManager:
                                 merged_prefs["terminal"] = terminal_config
                         elif key == "default_editor":
                             # Validate default_editor is a string
+                            if isinstance(value, str):
+                                merged_prefs[key] = value
+                        elif key == "default_text_editor":
+                            # Validate default_text_editor is a string
                             if isinstance(value, str):
                                 merged_prefs[key] = value
                         else:

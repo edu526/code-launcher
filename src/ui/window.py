@@ -49,10 +49,12 @@ class FinderStyleWindow(Gtk.Window):
         self.config = ConfigManager()
         self.categories = self.config.load_categories()
         self.projects = self.config.load_projects()
+        self.files = self.config.load_files()
 
         # Load preferences
         preferences = self.config.load_preferences()
         self.default_editor = preferences.get("default_editor", "kiro")
+        self.default_text_editor = preferences.get("default_text_editor", "gnome-text-editor")
         self.close_on_open = preferences.get("close_on_open", False)
 
         # Interface state

@@ -20,7 +20,7 @@ code-launcher/
 
 ### src/core/
 Configuration management and data persistence:
-- `config.py` - ConfigManager class, file paths, category/project loading
+- `config.py` - ConfigManager class, file paths, category/project/file loading
 
 ### src/ui/
 Main interface components:
@@ -34,18 +34,20 @@ Main interface components:
 Dialog windows for user input:
 - `category_dialog.py` - Create/edit categories
 - `project_dialog.py` - Add/edit projects
+- `file_dialog.py` - Add/edit files
 - `config_dialog.py` - Preferences and configuration
 
 ### src/context_menu/
 Right-click context menu system:
 - `handler.py` - ContextMenuHandler class
-- `context_detector.py` - Detect click context (ROOT_COLUMN, CHILD_COLUMN, CATEGORY_ITEM, PROJECT_ITEM)
+- `context_detector.py` - Detect click context (ROOT_COLUMN, CHILD_COLUMN, CATEGORY_ITEM, PROJECT_ITEM, FILE_ITEM)
 - `actions.py` - Menu actions (create, delete, rename, open)
 
 ### utils/
 Shared utilities:
 - `validation.py` - Input validation
 - `vscode_utils.py` - Editor integration
+- `text_editor_utils.py` - Text editor integration for files
 
 ### tests/
 Comprehensive test coverage:
@@ -62,7 +64,7 @@ UI logic separated into manager classes (SearchManager, KeyboardHandler, Navigat
 GTK signal/callback architecture for user interactions.
 
 ### Configuration as Data
-Categories and projects stored as JSON, loaded/saved via ConfigManager.
+Categories, projects, and files stored as JSON, loaded/saved via ConfigManager.
 
 ### Context Detection
 Context menu system detects click location and item type to show appropriate actions.

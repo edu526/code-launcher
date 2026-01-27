@@ -76,6 +76,7 @@ class ColumnBrowser(Gtk.ScrolledWindow):
         model = treeview.get_model()
         iter = model.get_iter(path)
         full_path = model.get_value(iter, 1)
+        item_icon = model.get_value(iter, 3)
 
         # If it's a category (starts with "cat:"), navigate to it
         if full_path and full_path.startswith("cat:"):
@@ -91,6 +92,15 @@ class ColumnBrowser(Gtk.ScrolledWindow):
                 # Navigate to selected category
                 # Use GLib.idle_add to ensure interface reloaded first
                 GLib.idle_add(self._navigate_to_category, full_path)
+        elif item_icon == "text-x-generic":
+            # It's a file - open with text editor
+            if self.parent_window:
+                from utils.text_editor_utils import open_file_in_editor
+                text_editor = getattr(self.parent_window, 'default_text_editor', 'gnome-text-editor')
+                success = open_file_in_editor(full_path, text_editor)
+
+                if success and hasattr(self.parent_window, 'close_on_open') and self.parent_window.close_on_open:
+                    self.parent_window.destroy()
         else:
             # It's a project - open with default editor
             if self.parent_window:
@@ -189,18 +199,56 @@ class ColumnBrowser(Gtk.ScrolledWindow):
             icon_name = category_info.get("icon", "folder")
             self.store.append([category_name, f"category:{category_name}", True, icon_name])
 
-    def load_hierarchy_level(self, categories, hierarchy_path=None):
-        """Load a specific level of the hierarchy"""
+    def load_hierarchy_level(self, categories, hierarchy_path=None, projects=None, files=None):
+        """Load a specific level of the hierarchy, including root-level projects and files"""
         self.store.clear()
 
+        if projects is None:
+            projects = {}
+        if files is None:
+            files = {}
+
         if hierarchy_path is None:
-            # Root level: show main categories
+            # Root level: show main categories, plus root-level projects and files
             self.current_path = "categories"
 
+            # Add categories first
             sorted_categories = sorted(categories.items(), key=lambda x: x[0].lower())
             for category_name, category_info in sorted_categories:
                 icon_name = category_info.get("icon", "folder")
                 self.store.append([category_name, f"cat:{category_name}", True, icon_name])
+
+            # Add root-level projects (without category)
+            root_projects = []
+            for project_name, project_info in projects.items():
+                if isinstance(project_info, str):
+                    # Old format - no category
+                    root_projects.append((project_name, project_info))
+                elif isinstance(project_info, dict):
+                    # New format - check if has no category
+                    if "category" not in project_info or project_info.get("category") is None:
+                        root_projects.append((project_name, project_info.get("path", "")))
+
+            # Sort and add root projects
+            root_projects.sort(key=lambda x: x[0].lower())
+            for project_name, project_path in root_projects:
+                self.store.append([project_name, project_path, True, "code"])
+
+            # Add root-level files (without category)
+            root_files = []
+            for file_name, file_info in files.items():
+                if isinstance(file_info, str):
+                    # Old format - no category
+                    root_files.append((file_name, file_info))
+                elif isinstance(file_info, dict):
+                    # New format - check if has no category
+                    if "category" not in file_info or file_info.get("category") is None:
+                        root_files.append((file_name, file_info.get("path", "")))
+
+            # Sort and add root files
+            root_files.sort(key=lambda x: x[0].lower())
+            for file_name, file_path in root_files:
+                self.store.append([file_name, file_path, True, "text-x-generic"])
         else:
             # Nested level: parse path
             parts = hierarchy_path.split(":")[1:]  # Ignore first "cat"
@@ -300,10 +348,13 @@ class ColumnBrowser(Gtk.ScrolledWindow):
 
 
 
-    def load_mixed_content(self, categories, hierarchy_path, projects):
-        """Load subcategories and projects together in same column"""
+    def load_mixed_content(self, categories, hierarchy_path, projects, files=None):
+        """Load subcategories, projects, and files together in same column"""
         self.store.clear()
         self.current_path = hierarchy_path
+
+        if files is None:
+            files = {}
 
         # Collect subcategories
         subcategories_list = []
@@ -388,8 +439,40 @@ class ColumnBrowser(Gtk.ScrolledWindow):
             if belongs_to_level:
                 category_projects.append((project_name, project_path))
 
-        # Sort projects alphabetically
+        # Filter and collect files
+        category_files = []
+        for file_name, file_info in files.items():
+            if isinstance(file_info, str):
+                file_path = file_info
+                file_category = None
+                file_subcategory = None
+            else:
+                file_path = file_info.get("path", "")
+                file_category = file_info.get("category", None)
+                file_subcategory = file_info.get("subcategory", None)
+
+            # Check if file belongs to current level
+            belongs_to_level = False
+            if category_name:
+                if file_category == category_name:
+                    if subcategory_path:
+                        if file_subcategory:
+                            file_sub_path = file_subcategory
+                            if subcategory_path == file_sub_path or file_sub_path.startswith(subcategory_path + ":"):
+                                belongs_to_level = True
+                    else:
+                        if not file_subcategory:
+                            belongs_to_level = True
+            else:
+                if not file_category:
+                    belongs_to_level = True
+
+            if belongs_to_level:
+                category_files.append((file_name, file_path))
+
+        # Sort projects and files alphabetically
         category_projects.sort(key=lambda x: x[0].lower())
+        category_files.sort(key=lambda x: x[0].lower())
 
         # Add subcategories FIRST (prioritized at top)
         for sub_name, sub_path, sub_icon in subcategories_list:
@@ -398,6 +481,10 @@ class ColumnBrowser(Gtk.ScrolledWindow):
         # Then add projects (below subcategories)
         for project_name, project_path in category_projects:
             self.store.append([project_name, project_path, True, "code"])
+
+        # Finally add files (below projects)
+        for file_name, file_path in category_files:
+            self.store.append([file_name, file_path, True, "text-x-generic"])
 
     def get_selected_path(self):
         """Get currently selected path"""
