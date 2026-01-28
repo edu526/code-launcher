@@ -5,7 +5,7 @@ Keyboard shortcuts handler for Code Launcher
 
 import gi
 gi.require_version('Gtk', '3.0')
-from gi.repository import Gdk
+from gi.repository import Gdk, Gtk
 import logging
 
 logger = logging.getLogger(__name__)
@@ -242,7 +242,15 @@ class KeyboardHandler:
             # Focus previous column
             for i, column in enumerate(self.window.columns):
                 if column.treeview.has_focus() and i > 0:
-                    self.window.columns[i-1].treeview.grab_focus()
+                    prev_column = self.window.columns[i-1]
+                    prev_column.treeview.grab_focus()
+                    # Select first item if nothing selected
+                    selection = prev_column.treeview.get_selection()
+                    model, iter = selection.get_selected()
+                    if not iter:
+                        first_iter = prev_column.store.get_iter_first()
+                        if first_iter:
+                            selection.select_iter(first_iter)
                     return
 
     def _navigate_right(self):
@@ -251,37 +259,108 @@ class KeyboardHandler:
             # Focus next column
             for i, column in enumerate(self.window.columns):
                 if column.treeview.has_focus() and i < len(self.window.columns) - 1:
-                    self.window.columns[i+1].treeview.grab_focus()
+                    next_column = self.window.columns[i+1]
+                    next_column.treeview.grab_focus()
+                    # Select first item if nothing selected
+                    selection = next_column.treeview.get_selection()
+                    model, iter = selection.get_selected()
+                    if not iter:
+                        first_iter = next_column.store.get_iter_first()
+                        if first_iter:
+                            selection.select_iter(first_iter)
                     return
 
     def _navigate_up(self):
-        """Navigate up in current column"""
+        """Navigate up in current column or to search if at top"""
+        # Check if search entry has focus
+        if hasattr(self.window, 'search_entry') and self.window.search_entry.has_focus():
+            # Don't do anything, let search handle it
+            return
+
+        # Check if we're in a column
+        focused_column = None
         for column in self.window.columns:
             if column.treeview.has_focus():
-                selection = column.treeview.get_selection()
-                model, iter = selection.get_selected()
-                if iter:
-                    path = model.get_path(iter)
-                    if path.get_indices()[0] > 0:
-                        prev_path = Gtk.TreePath.new_from_indices([path.get_indices()[0] - 1])
-                        selection.select_path(prev_path)
-                        column.treeview.scroll_to_cell(prev_path, None, False, 0, 0)
-                return
+                focused_column = column
+                break
+
+        if focused_column:
+            selection = focused_column.treeview.get_selection()
+            model, iter = selection.get_selected()
+
+            if iter:
+                # Check if we're at the top
+                path = model.get_path(iter)
+                if path.get_indices()[0] == 0:
+                    # At the top, move to search
+                    if hasattr(self.window, 'search_entry'):
+                        self.window.search_entry.grab_focus()
+                        # Position cursor at end of text
+                        self.window.search_entry.set_position(-1)
+                    return
+
+                # Move to previous item
+                if path.get_indices()[0] > 0:
+                    prev_path = Gtk.TreePath.new_from_indices([path.get_indices()[0] - 1])
+                    selection.select_path(prev_path)
+                    focused_column.treeview.set_cursor(prev_path, None, False)
+                    focused_column.treeview.scroll_to_cell(prev_path, None, False, 0, 0)
+            else:
+                # No selection, select first item
+                first_iter = model.get_iter_first()
+                if first_iter:
+                    path = model.get_path(first_iter)
+                    selection.select_iter(first_iter)
+                    focused_column.treeview.set_cursor(path, None, False)
+                    focused_column.treeview.scroll_to_cell(path, None, False, 0, 0)
 
     def _navigate_down(self):
-        """Navigate down in current column"""
+        """Navigate down in current column or from search to first column"""
+        # Check if search entry has focus
+        if hasattr(self.window, 'search_entry') and self.window.search_entry.has_focus():
+            # Move focus to first column
+            if self.window.columns:
+                first_column = self.window.columns[0]
+                first_column.treeview.grab_focus()
+                # Select first item if nothing selected
+                selection = first_column.treeview.get_selection()
+                model, iter = selection.get_selected()
+                if not iter:
+                    first_iter = first_column.store.get_iter_first()
+                    if first_iter:
+                        path = first_column.store.get_path(first_iter)
+                        selection.select_iter(first_iter)
+                        first_column.treeview.set_cursor(path, None, False)
+                        first_column.treeview.scroll_to_cell(path, None, False, 0, 0)
+            return
+
+        # Check if we're in a column
+        focused_column = None
         for column in self.window.columns:
             if column.treeview.has_focus():
-                selection = column.treeview.get_selection()
-                model, iter = selection.get_selected()
-                if iter:
-                    path = model.get_path(iter)
-                    next_iter = model.iter_next(iter)
-                    if next_iter:
-                        next_path = model.get_path(next_iter)
-                        selection.select_path(next_path)
-                        column.treeview.scroll_to_cell(next_path, None, False, 0, 0)
-                return
+                focused_column = column
+                break
+
+        if focused_column:
+            selection = focused_column.treeview.get_selection()
+            model, iter = selection.get_selected()
+
+            if iter:
+                # Move to next item
+                next_iter = model.iter_next(iter)
+                if next_iter:
+                    next_path = model.get_path(next_iter)
+                    selection.select_path(next_path)
+                    focused_column.treeview.set_cursor(next_path, None, False)
+                    focused_column.treeview.scroll_to_cell(next_path, None, False, 0, 0)
+            else:
+                # No selection, select first item
+                first_iter = model.get_iter_first()
+                if first_iter:
+                    path = model.get_path(first_iter)
+                    selection.select_iter(first_iter)
+                    focused_column.treeview.set_cursor(path, None, False)
+                    focused_column.treeview.scroll_to_cell(path, None, False, 0, 0)
 
     def _select_item_by_index(self, index):
         """Select item by index (0-8) in focused column"""

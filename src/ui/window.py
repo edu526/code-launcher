@@ -433,6 +433,11 @@ class FinderStyleWindow(Gtk.Window):
         # Separator
         menu.append(Gtk.SeparatorMenuItem())
 
+        # Option: Keyboard Shortcuts
+        shortcuts_item = Gtk.MenuItem(label="Keyboard Shortcuts")
+        shortcuts_item.connect("activate", self._on_shortcuts)
+        menu.append(shortcuts_item)
+
         # Option: View Logs
         logs_item = Gtk.MenuItem(label="View Logs")
         logs_item.connect("activate", self._on_view_logs)
@@ -481,6 +486,11 @@ class FinderStyleWindow(Gtk.Window):
         # Pass terminal manager if available, None otherwise for graceful degradation
         terminal_manager = self.terminal_manager if self.has_terminal_support() else None
         show_preferences_dialog(self, self.config, terminal_manager)
+
+    def _on_shortcuts(self, menu_item):
+        """Open keyboard shortcuts dialog"""
+        from src.dialogs.shortcuts_dialog import show_shortcuts_dialog
+        show_shortcuts_dialog(self)
 
     def _on_view_logs(self, menu_item):
         """Open logs viewer dialog"""
