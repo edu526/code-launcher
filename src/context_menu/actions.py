@@ -8,6 +8,8 @@ gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
 
 import logging
+import os
+import subprocess
 from src.dialogs import show_create_category_dialog, show_add_project_dialog, show_add_file_dialog
 from .context_detector import get_hierarchy_info, ROOT_COLUMN, CHILD_COLUMN, CATEGORY_ITEM
 
@@ -1159,3 +1161,70 @@ def toggle_favorite_action(context, column_browser, parent_window, item_type="pr
     except Exception as e:
         logger.error(f"Error toggling favorite: {e}", exc_info=True)
         show_error_dialog(parent_window, f"Error toggling favorite: {e}")
+
+
+def open_directory_action(context, parent_window):
+    """
+    Handle open directory action from context menu
+    For projects: opens the project directory
+    For files: opens the directory containing the file
+
+    Args:
+        context: Context dictionary with item path
+        parent_window: FinderStyleWindow instance
+    """
+    logger.info(f"Open directory action triggered with context: {context}")
+
+    try:
+        item_path = context.get('item_path')
+        is_file = context.get('is_file', False)
+
+        if not item_path:
+            logger.error("No item path found in context")
+            show_error_dialog(parent_window, "Error: Item path not found")
+            return
+
+        # Determine the directory to open
+        if is_file:
+            # For files, open the directory containing the file
+            directory = os.path.dirname(item_path)
+            logger.debug(f"Opening directory containing file: {directory}")
+        else:
+            # For projects, open the project directory itself
+            directory = item_path
+            logger.debug(f"Opening project directory: {directory}")
+
+        # Check if directory exists
+        if not os.path.exists(directory):
+            logger.error(f"Directory does not exist: {directory}")
+            show_error_dialog(parent_window, f"Error: Directory not found\n{directory}")
+            return
+
+        if not os.path.isdir(directory):
+            logger.error(f"Path is not a directory: {directory}")
+            show_error_dialog(parent_window, f"Error: Not a directory\n{directory}")
+            return
+
+        # Open the directory in the default file manager
+        try:
+            # Try xdg-open first (works on most Linux systems)
+            subprocess.Popen(['xdg-open', directory])
+            logger.info(f"Successfully opened directory: {directory}")
+        except FileNotFoundError:
+            # Fallback to nautilus if xdg-open is not available
+            try:
+                subprocess.Popen(['nautilus', directory])
+                logger.info(f"Successfully opened directory with nautilus: {directory}")
+            except FileNotFoundError:
+                # Last resort: try thunar
+                try:
+                    subprocess.Popen(['thunar', directory])
+                    logger.info(f"Successfully opened directory with thunar: {directory}")
+                except FileNotFoundError:
+                    logger.error("No file manager found (xdg-open, nautilus, thunar)")
+                    show_error_dialog(parent_window, "Error: No file manager found on system")
+
+    except Exception as e:
+        logger.error(f"Error opening directory: {e}", exc_info=True)
+        show_error_dialog(parent_window, f"Error opening directory: {e}")
+

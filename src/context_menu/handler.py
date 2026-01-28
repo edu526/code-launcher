@@ -28,7 +28,8 @@ from .actions import (
     delete_category_action,
     rename_category_action,
     delete_project_action,
-    delete_file_action
+    delete_file_action,
+    open_directory_action
 )
 
 logger = logging.getLogger(__name__)
@@ -133,6 +134,10 @@ class ContextMenuHandler:
                 self._add_menu_item(menu, "Open In Terminal",
                                   lambda w: open_in_terminal(context, self.parent_window))
 
+            # Add "Open Directory"
+            self._add_menu_item(menu, "Open Directory",
+                              lambda w: open_directory_action(context, self.parent_window))
+
             # Separator
             menu.append(Gtk.SeparatorMenuItem())
 
@@ -153,6 +158,10 @@ class ContextMenuHandler:
             # File item menu: Open and Delete
             self._add_menu_item(menu, "Open",
                               lambda w: open_file_action(context, self.parent_window))
+
+            # Add "Open Directory" to show the folder containing the file
+            self._add_menu_item(menu, "Open Directory",
+                              lambda w: open_directory_action(context, self.parent_window))
 
             # Separator
             menu.append(Gtk.SeparatorMenuItem())
