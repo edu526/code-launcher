@@ -64,21 +64,15 @@ class SearchManager:
         matching_files = self._find_matching_files(normalized_search)
         matching_categories = self._find_matching_categories(normalized_search, self.window.categories)
 
-        # For each found category, add all its projects
-        category_projects = self._get_projects_from_categories(matching_categories)
+        # Only show items that directly match the search term
+        # Don't include all projects from matching categories
 
-        # Combine directly found projects + projects from found categories
         # Use dict to avoid duplicates (key = project_name)
         all_projects = {}
 
-        # Add projects matching by name
+        # Add only projects matching by name
         for project_name, project_path, category in matching_projects:
             all_projects[project_name] = (project_name, project_path, category)
-
-        # Add projects from found categories
-        for project_name, project_path, category in category_projects:
-            if project_name not in all_projects:
-                all_projects[project_name] = (project_name, project_path, category)
 
         # Convert dict to list and sort alphabetically
         final_projects = sorted(list(all_projects.values()), key=lambda x: x[0].lower())
@@ -259,23 +253,23 @@ class SearchManager:
         sorted_categories = sorted(categories, key=lambda x: x[0].lower())
         for cat_name, cat_path, cat_type in sorted_categories:
             is_fav = self.window.config.is_favorite(cat_path, "category")
-            results_column.store.append([f"📁 {cat_name}", cat_path, True, "folder", is_fav])
+            results_column.store.append([f"📁 {cat_name}", cat_path, True, "folder", is_fav, False])
 
         # Add projects (sorted alphabetically)
         sorted_projects = sorted(projects, key=lambda x: x[0].lower())
         for project_name, project_path, category in sorted_projects:
             is_fav = self.window.config.is_favorite(project_path, "project")
-            results_column.store.append([f"📄 {project_name}", project_path, True, "code", is_fav])
+            results_column.store.append([f"📄 {project_name}", project_path, True, "code", is_fav, False])
 
         # Add files (sorted alphabetically)
         sorted_files = sorted(files, key=lambda x: x[0].lower())
         for file_name, file_path, category in sorted_files:
             is_fav = self.window.config.is_favorite(file_path, "file")
-            results_column.store.append([f"📄 {file_name}", file_path, True, "text-x-generic", is_fav])
+            results_column.store.append([f"📄 {file_name}", file_path, True, "text-x-generic", is_fav, False])
 
         # If no results, show message
         if not projects and not files and not categories:
-            results_column.store.append(["No results found", "", False, "dialog-information", False])
+            results_column.store.append(["No results found", "", False, "dialog-information", False, False])
 
         # Add column to interface
         self.window.columns.append(results_column)
@@ -303,7 +297,7 @@ class SearchManager:
         results_column.store.clear()
 
         if not recents:
-            results_column.store.append(["No recent items", "", False, "dialog-information", False])
+            results_column.store.append(["No recent items", "", False, "dialog-information", False, False])
         else:
             for item in recents:
                 item_name = item.get("name", "Unknown")
@@ -313,7 +307,7 @@ class SearchManager:
                 icon = "text-x-generic" if item_type == "file" else "code"
                 is_fav = self.window.config.is_favorite(item_path, item_type)
 
-                results_column.store.append([item_name, item_path, True, icon, is_fav])
+                results_column.store.append([item_name, item_path, True, icon, is_fav, False])
 
         # Add column to interface
         self.window.columns.append(results_column)

@@ -214,6 +214,12 @@ class ContextMenuHandler:
             event: Gdk.EventButton for positioning
         """
         try:
+            # Mark context menu as active
+            self.column_browser.context_menu_active = True
+
+            # Connect to menu deactivate signal to clear the flag
+            menu.connect("deactivate", self._on_menu_deactivate)
+
             # Get the event button and time for popup
             button = event.button
             event_time = event.time
@@ -231,6 +237,12 @@ class ContextMenuHandler:
 
         except Exception as e:
             logger.error(f"Error displaying context menu: {e}")
+            self.column_browser.context_menu_active = False
+
+    def _on_menu_deactivate(self, menu):
+        """Called when context menu is closed"""
+        self.column_browser.context_menu_active = False
+        logger.debug("Context menu deactivated")
 
     def on_button_press(self, widget, event):
         """
@@ -255,6 +267,9 @@ class ContextMenuHandler:
                     # Clicked on an item
                     tree_path, column, cell_x, cell_y = path_info
 
+                    # Mark context menu as active BEFORE any selection changes
+                    self.column_browser.context_menu_active = True
+
                     # Check if the clicked item is already selected
                     selection = self.column_browser.treeview.get_selection()
                     model, selected_iter = selection.get_selected()
@@ -267,12 +282,11 @@ class ContextMenuHandler:
                     # If clicked item is not selected, select it first
                     if selected_path != tree_path:
                         logger.debug(f"Selecting item at path {tree_path} before showing context menu")
-                        selection.select_path(tree_path)
 
-                        # Trigger the selection callback to update the interface
-                        iter = model.get_iter(tree_path)
-                        item_path = model.get_value(iter, 1)
-                        self.column_browser.callback(item_path, True)
+                        # Block the selection callback temporarily to prevent navigation
+                        selection.handler_block_by_func(self.column_browser.on_selection_changed)
+                        selection.select_path(tree_path)
+                        selection.handler_unblock_by_func(self.column_browser.on_selection_changed)
                 else:
                     # Clicked on empty area - deselect any selected item
                     logger.debug("Right-click on empty area - deselecting items")

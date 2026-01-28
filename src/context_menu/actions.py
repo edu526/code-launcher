@@ -1114,10 +1114,12 @@ def toggle_favorite_action(context, column_browser, parent_window, item_type="pr
 
         # Determine the correct refresh method based on current_path
         current_path = column_browser.current_path
+        logger.debug(f"Reloading column with current_path: {current_path}")
 
         # Check if we're in the root categories view or a nested view
         if current_path is None or current_path == "categories":
             # Root level - use load_hierarchy_level
+            logger.debug("Reloading root level with load_hierarchy_level")
             column_browser.load_hierarchy_level(
                 parent_window.categories,
                 None,
@@ -1126,6 +1128,7 @@ def toggle_favorite_action(context, column_browser, parent_window, item_type="pr
             )
         elif current_path and current_path.startswith("cat:"):
             # We're in a category view - use load_mixed_content
+            logger.debug(f"Reloading category view with load_mixed_content: {current_path}")
             column_browser.load_mixed_content(
                 parent_window.categories,
                 current_path,
@@ -1134,6 +1137,7 @@ def toggle_favorite_action(context, column_browser, parent_window, item_type="pr
             )
         else:
             # Fallback - try load_mixed_content
+            logger.debug(f"Fallback reload with load_mixed_content: {current_path}")
             if hasattr(column_browser, 'load_mixed_content'):
                 column_browser.load_mixed_content(
                     parent_window.categories,

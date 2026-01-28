@@ -61,13 +61,36 @@ class NavigationManager:
         self.window.columns_box.pack_start(column, True, True, 1)
         column.show_all()
 
-    def on_column_selection(self, path, is_dir):
+        # Ensure we always have 3 columns visible
+        self._ensure_three_columns()
+
+    def _ensure_three_columns(self):
+        """Ensure there are always 3 columns visible (fill with empty ones if needed)"""
+        # Don't add empty columns if we're in search or recent items mode
+        if len(self.window.columns) > 0:
+            first_column = self.window.columns[0]
+            if hasattr(first_column, 'current_path'):
+                # Skip if in search or recent items mode
+                if first_column.current_path in ["search_results", "recent_items"]:
+                    return
+
+        while len(self.window.columns) < 3:
+            # Create empty placeholder column
+            empty_column = ColumnBrowser(self.on_column_selection, "empty", self.window)
+            empty_column.store.clear()  # Keep it empty
+            empty_column.current_path = "empty"
+            self.window.columns.append(empty_column)
+            self.window.columns_box.pack_start(empty_column, True, True, 1)
+            empty_column.show_all()
+
+    def on_column_selection(self, path, is_dir, source_column=None):
         """
         Handle column selection events
 
         Args:
             path: Selected path
             is_dir: Whether the selection is a directory
+            source_column: The column that triggered this selection (optional)
         """
         self.window.selected_path = path
 
@@ -78,8 +101,41 @@ class NavigationManager:
             # In categories view
             pass
         else:
-            # It's a normal project or directory - don't expand further
-            pass
+            # It's a normal project or file - clear columns to the right
+            self._clear_columns_after_selection(source_column)
+
+    def _clear_columns_after_selection(self, source_column=None):
+        """
+        Clear content of columns to the right of the current selection
+
+        Args:
+            source_column: The column that triggered the selection (optional)
+        """
+        # Find which column has the selection
+        selected_column_index = -1
+
+        if source_column:
+            # If we know the source column, find its index
+            for i, column in enumerate(self.window.columns):
+                if column == source_column:
+                    selected_column_index = i
+                    break
+        else:
+            # Otherwise, search for the column with selection
+            for i, column in enumerate(self.window.columns):
+                selection = column.treeview.get_selection()
+                model, iter = selection.get_selected()
+                if iter:
+                    selected_column_index = i
+                    break
+
+        if selected_column_index >= 0:
+            # Clear all columns after the selected one (but keep them visible)
+            for i in range(selected_column_index + 1, len(self.window.columns)):
+                if i < len(self.window.columns):  # Safety check
+                    self.window.columns[i].store.clear()
+                    if hasattr(self.window.columns[i], 'current_path'):
+                        self.window.columns[i].current_path = "empty"
 
     def _handle_category_selection(self, hierarchy_path):
         """
@@ -96,15 +152,15 @@ class NavigationManager:
         # Determine depth level
         depth_level = len(path_parts) - 1
 
-        # Remove columns to the right of the selected level
-        target_columns_count = depth_level + 1
+        # Remove columns to the right of the selected level (but keep minimum 3)
+        target_columns_count = max(depth_level + 1, 3)
 
         while len(self.window.columns) > target_columns_count:
             old_column = self.window.columns.pop()
             self.window.columns_box.remove(old_column)
 
         # Create or reload column for content
-        if len(self.window.columns) == target_columns_count - 1:
+        if len(self.window.columns) == depth_level:
             # Create new mixed column
             mixed_column = self.add_column(hierarchy_path, "mixed")
             mixed_column.current_path = hierarchy_path
@@ -120,6 +176,9 @@ class NavigationManager:
                 )
                 existing_column.current_path = hierarchy_path
 
+        # Ensure we have 3 columns
+        self._ensure_three_columns()
+
     def reload_interface(self):
         """Reload the entire interface"""
         # Clear columns
@@ -133,6 +192,8 @@ class NavigationManager:
 
         # Create first column with categories
         self.add_column(None, "categories")
+
+        # _ensure_three_columns is called by add_column -> _pack_column
 
     def select_first_category(self):
         """Select the first category automatically and cascade to first subcategory if exists"""
@@ -149,7 +210,7 @@ class NavigationManager:
                     path = first_column.store.get_value(first_iter, 1)
 
                     # Trigger selection to create next column
-                    self.on_column_selection(path, True)
+                    self.on_column_selection(path, True, None)
 
                     # Schedule cascade selection for next column
                     GLib.timeout_add(50, self._cascade_select_first)
@@ -172,6 +233,6 @@ class NavigationManager:
                     selection.select_iter(first_iter)
 
                     # Trigger selection to potentially create next column
-                    self.on_column_selection(path, True)
+                    self.on_column_selection(path, True, None)
 
         return False

@@ -22,6 +22,35 @@ class KeyboardHandler:
             window: FinderStyleWindow instance
         """
         self.window = window
+        self.last_focused_column_index = None  # Remember which column we came from when going to search
+        self.column_selections = {}  # Store last selection for each column index
+
+    def _update_breadcrumb_trail(self):
+        """Update the visual breadcrumb trail across all columns"""
+        # Clear all breadcrumb markings first
+        for column in self.window.columns:
+            column.clear_breadcrumb_trail()
+
+        # Find which column currently has focus
+        focused_column_index = None
+        for i, column in enumerate(self.window.columns):
+            if column.treeview.has_focus():
+                focused_column_index = i
+                break
+
+        # Only mark breadcrumb trail in columns BEFORE the focused one
+        if focused_column_index is not None:
+            for i in range(focused_column_index):
+                if i in self.column_selections:
+                    try:
+                        path = self.column_selections[i]
+                        column = self.window.columns[i]
+                        iter = column.store.get_iter(path)
+                        if iter:
+                            item_path = column.store.get_value(iter, 1)
+                            column.mark_breadcrumb_item(item_path)
+                    except:
+                        pass
 
     def on_key_press(self, widget, event):
         """
@@ -118,7 +147,20 @@ class KeyboardHandler:
                     icon = model.get_value(iter, 3)
 
                     if selected_path.startswith("cat:"):
-                        # It's a category, just navigate
+                        # It's a category
+                        # If in search/recent mode, navigate to it
+                        if column.current_path in ["search_results", "recent_items"]:
+                            # Clear search
+                            if hasattr(self.window, 'search_entry'):
+                                self.window.search_entry.set_text("")
+
+                            # Reload normal interface
+                            self.window.reload_interface()
+
+                            # Navigate to selected category
+                            from gi.repository import GLib
+                            GLib.idle_add(column._navigate_to_category, selected_path)
+                        # Otherwise just return (normal navigation handles it)
                         return
                     elif icon == "text-x-generic":
                         # It's a file
@@ -214,20 +256,41 @@ class KeyboardHandler:
                     logger.info(f"Item {status} favorites: {selected_path}")
 
                     # Refresh the column to show star icon
-                    if hasattr(column, 'load_mixed_content'):
-                        column.load_mixed_content(
-                            self.window.categories,
-                            column.current_path,
-                            self.window.projects,
-                            self.window.files
-                        )
-                    elif hasattr(column, 'load_hierarchy_level'):
+                    current_path = column.current_path
+
+                    # Check if we're in the root categories view or a nested view
+                    if current_path is None or current_path == "categories":
+                        # Root level - use load_hierarchy_level with None
                         column.load_hierarchy_level(
                             self.window.categories,
-                            column.current_path,
+                            None,
                             self.window.projects,
                             self.window.files
                         )
+                    elif current_path and current_path.startswith("cat:"):
+                        # We're in a category view - use load_mixed_content
+                        column.load_mixed_content(
+                            self.window.categories,
+                            current_path,
+                            self.window.projects,
+                            self.window.files
+                        )
+                    else:
+                        # Fallback
+                        if hasattr(column, 'load_mixed_content'):
+                            column.load_mixed_content(
+                                self.window.categories,
+                                column.current_path,
+                                self.window.projects,
+                                self.window.files
+                            )
+                        elif hasattr(column, 'load_hierarchy_level'):
+                            column.load_hierarchy_level(
+                                self.window.categories,
+                                column.current_path,
+                                self.window.projects,
+                                self.window.files
+                            )
                 return
 
     def _show_recents(self):
@@ -236,21 +299,63 @@ class KeyboardHandler:
             self.window.search_entry.set_text("@recent")
             self.window.search_entry.grab_focus()
 
+    def _save_current_selection(self, column_index):
+        """Save the current selection for a column"""
+        if column_index < len(self.window.columns):
+            column = self.window.columns[column_index]
+            selection = column.treeview.get_selection()
+            model, iter = selection.get_selected()
+            if iter:
+                path = model.get_path(iter)
+                self.column_selections[column_index] = path
+                # Update breadcrumb trail after saving
+                self._update_breadcrumb_trail()
+
+    def _restore_selection(self, column_index):
+        """Restore the saved selection for a column"""
+        if column_index < len(self.window.columns):
+            column = self.window.columns[column_index]
+
+            # Try to restore saved selection
+            if column_index in self.column_selections:
+                try:
+                    saved_path = self.column_selections[column_index]
+                    selection = column.treeview.get_selection()
+                    selection.select_path(saved_path)
+                    column.treeview.set_cursor(saved_path, None, False)
+                    column.treeview.scroll_to_cell(saved_path, None, False, 0, 0)
+                    # Update breadcrumb trail after restoring
+                    self._update_breadcrumb_trail()
+                    return True
+                except:
+                    pass
+
+            # If no saved selection or it failed, select first item
+            selection = column.treeview.get_selection()
+            first_iter = column.store.get_iter_first()
+            if first_iter:
+                path = column.store.get_path(first_iter)
+                selection.select_iter(first_iter)
+                column.treeview.set_cursor(path, None, False)
+                column.treeview.scroll_to_cell(path, None, False, 0, 0)
+                return True
+
+            return False
+
     def _navigate_left(self):
         """Navigate to previous column"""
         if len(self.window.columns) > 1:
             # Focus previous column
             for i, column in enumerate(self.window.columns):
                 if column.treeview.has_focus() and i > 0:
+                    # Save current selection before leaving
+                    self._save_current_selection(i)
+
                     prev_column = self.window.columns[i-1]
                     prev_column.treeview.grab_focus()
-                    # Select first item if nothing selected
-                    selection = prev_column.treeview.get_selection()
-                    model, iter = selection.get_selected()
-                    if not iter:
-                        first_iter = prev_column.store.get_iter_first()
-                        if first_iter:
-                            selection.select_iter(first_iter)
+
+                    # Restore previous selection
+                    self._restore_selection(i-1)
                     return
 
     def _navigate_right(self):
@@ -260,14 +365,19 @@ class KeyboardHandler:
             for i, column in enumerate(self.window.columns):
                 if column.treeview.has_focus() and i < len(self.window.columns) - 1:
                     next_column = self.window.columns[i+1]
+
+                    # Check if next column is empty
+                    if not next_column.store.get_iter_first():
+                        # Column is empty, don't navigate
+                        return
+
+                    # Save current selection before leaving
+                    self._save_current_selection(i)
+
                     next_column.treeview.grab_focus()
-                    # Select first item if nothing selected
-                    selection = next_column.treeview.get_selection()
-                    model, iter = selection.get_selected()
-                    if not iter:
-                        first_iter = next_column.store.get_iter_first()
-                        if first_iter:
-                            selection.select_iter(first_iter)
+
+                    # Restore next column selection
+                    self._restore_selection(i+1)
                     return
 
     def _navigate_up(self):
@@ -279,9 +389,11 @@ class KeyboardHandler:
 
         # Check if we're in a column
         focused_column = None
-        for column in self.window.columns:
+        focused_column_index = None
+        for i, column in enumerate(self.window.columns):
             if column.treeview.has_focus():
                 focused_column = column
+                focused_column_index = i
                 break
 
         if focused_column:
@@ -292,7 +404,9 @@ class KeyboardHandler:
                 # Check if we're at the top
                 path = model.get_path(iter)
                 if path.get_indices()[0] == 0:
-                    # At the top, move to search
+                    # At the top, move to search and remember this column and item
+                    self.last_focused_column_index = focused_column_index
+                    self._save_current_selection(focused_column_index)
                     if hasattr(self.window, 'search_entry'):
                         self.window.search_entry.grab_focus()
                         # Position cursor at end of text
@@ -318,20 +432,26 @@ class KeyboardHandler:
         """Navigate down in current column or from search to first column"""
         # Check if search entry has focus
         if hasattr(self.window, 'search_entry') and self.window.search_entry.has_focus():
-            # Move focus to first column
+            # Move focus to the column we came from, or first column if none remembered
             if self.window.columns:
-                first_column = self.window.columns[0]
-                first_column.treeview.grab_focus()
-                # Select first item if nothing selected
-                selection = first_column.treeview.get_selection()
-                model, iter = selection.get_selected()
-                if not iter:
-                    first_iter = first_column.store.get_iter_first()
-                    if first_iter:
-                        path = first_column.store.get_path(first_iter)
-                        selection.select_iter(first_iter)
-                        first_column.treeview.set_cursor(path, None, False)
-                        first_column.treeview.scroll_to_cell(path, None, False, 0, 0)
+                # Use remembered column index, or default to first column
+                target_index = self.last_focused_column_index if self.last_focused_column_index is not None else 0
+
+                # Make sure the index is valid
+                if target_index >= len(self.window.columns):
+                    target_index = 0
+
+                target_column = self.window.columns[target_index]
+
+                # Check if target column is empty
+                if not target_column.store.get_iter_first():
+                    # Column is empty, don't navigate
+                    return
+
+                target_column.treeview.grab_focus()
+
+                # Restore the saved selection for this column
+                self._restore_selection(target_index)
             return
 
         # Check if we're in a column

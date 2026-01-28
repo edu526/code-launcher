@@ -17,13 +17,14 @@ class ColumnBrowser(Gtk.ScrolledWindow):
         self.parent_window = parent_window  # Reference to main window
         self.current_path = None
         self.column_type = column_type  # "directory", "categories", "projects"
+        self.context_menu_active = False  # Track if context menu is open
 
         self.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
         self.set_min_content_width(200)
         self.set_shadow_type(Gtk.ShadowType.IN)
 
-        # Item list - added favorite flag
-        self.store = Gtk.ListStore(str, str, bool, str, bool)  # display_name, full_path, is_dir, icon_name, is_favorite
+        # Item list - added favorite flag and breadcrumb flag
+        self.store = Gtk.ListStore(str, str, bool, str, bool, bool)  # display_name, full_path, is_dir, icon_name, is_favorite, is_in_breadcrumb
         self.treeview = Gtk.TreeView(model=self.store)
         self.treeview.set_headers_visible(False)
         self.treeview.set_enable_search(False)
@@ -48,6 +49,9 @@ class ColumnBrowser(Gtk.ScrolledWindow):
         selection = self.treeview.get_selection()
         selection.connect("changed", self.on_selection_changed)
 
+        # Clear selection when losing focus
+        self.treeview.connect("focus-out-event", self.on_focus_out)
+
         # Setup drag and drop for this column
         self._setup_drag_and_drop()
 
@@ -68,21 +72,82 @@ class ColumnBrowser(Gtk.ScrolledWindow):
         cell.set_property("icon-name", icon_name)
 
     def text_data_func(self, column, cell, model, iter, data):
-        """Add star to favorited items"""
+        """Add star to favorited items and highlight breadcrumb trail"""
         display_name = model.get_value(iter, 0)
         is_favorite = model.get_value(iter, 4)
+        is_in_breadcrumb = model.get_value(iter, 5)
 
         if is_favorite:
             cell.set_property("text", f"★ {display_name}")
         else:
             cell.set_property("text", display_name)
 
+        # Highlight breadcrumb trail with a subtle background color
+        if is_in_breadcrumb:
+            cell.set_property("background", "#E8F4F8")  # Light blue background
+            cell.set_property("background-set", True)
+        else:
+            cell.set_property("background-set", False)
+
     def on_selection_changed(self, selection):
         """When an item is selected"""
         model, iter = selection.get_selected()
         if iter:
             path = model.get_value(iter, 1)
-            self.callback(path, True)
+
+            # Don't trigger navigation callback when in search/recent mode
+            # Let double-click handle navigation instead
+            if self.current_path in ["search_results", "recent_items"]:
+                return
+
+            self.callback(path, True, self)
+
+            # Update breadcrumb trail when selection changes via click
+            if self.parent_window and hasattr(self.parent_window, 'keyboard_handler'):
+                # Find this column's index
+                for i, col in enumerate(self.parent_window.columns):
+                    if col == self:
+                        # Ensure this column has focus
+                        if not self.treeview.has_focus():
+                            self.treeview.grab_focus()
+
+                        # Save the selection
+                        tree_path = model.get_path(iter)
+                        self.parent_window.keyboard_handler.column_selections[i] = tree_path
+
+                        # Update breadcrumb trail after a short delay to ensure focus is set
+                        from gi.repository import GLib
+                        GLib.idle_add(self.parent_window.keyboard_handler._update_breadcrumb_trail)
+                        break
+                        GLib.idle_add(self.parent_window.keyboard_handler._update_breadcrumb_trail)
+                        break
+
+    def on_focus_out(self, widget, event):
+        """Clear selection when column loses focus (but not when context menu is active)"""
+        # Don't clear selection if context menu is open
+        if self.context_menu_active:
+            return False
+
+        selection = self.treeview.get_selection()
+        selection.unselect_all()
+        return False  # Allow event to propagate
+
+    def mark_breadcrumb_item(self, path):
+        """Mark an item as part of the breadcrumb trail"""
+        iter = self.store.get_iter_first()
+        while iter:
+            item_path = self.store.get_value(iter, 1)
+            if item_path == path:
+                self.store.set_value(iter, 5, True)  # Set breadcrumb flag
+                break
+            iter = self.store.iter_next(iter)
+
+    def clear_breadcrumb_trail(self):
+        """Clear all breadcrumb markings in this column"""
+        iter = self.store.get_iter_first()
+        while iter:
+            self.store.set_value(iter, 5, False)  # Clear breadcrumb flag
+            iter = self.store.iter_next(iter)
 
     def on_row_activated(self, treeview, path, column):
         """Double click on an item"""
@@ -166,7 +231,7 @@ class ColumnBrowser(Gtk.ScrolledWindow):
                         selection.select_iter(iter)
 
                         # Trigger selection event
-                        self.parent_window.navigation_manager.on_column_selection(current_path, True)
+                        self.parent_window.navigation_manager.on_column_selection(current_path, True, None)
                         break
                     iter = column.store.iter_next(iter)
 
@@ -201,7 +266,7 @@ class ColumnBrowser(Gtk.ScrolledWindow):
             items.sort(key=lambda x: x[0].lower())
 
             for display_name, full_path in items:
-                self.store.append([display_name, full_path, True, "folder", False])
+                self.store.append([display_name, full_path, True, "folder", False, False])
 
         except PermissionError:
             pass
@@ -216,7 +281,7 @@ class ColumnBrowser(Gtk.ScrolledWindow):
 
         for category_name, category_info in sorted_categories:
             icon_name = category_info.get("icon", "folder")
-            self.store.append([category_name, f"category:{category_name}", True, icon_name, False])
+            self.store.append([category_name, f"category:{category_name}", True, icon_name, False, False])
 
     def load_hierarchy_level(self, categories, hierarchy_path=None, projects=None, files=None):
         """Load a specific level of the hierarchy, including root-level projects and files"""
@@ -247,7 +312,7 @@ class ColumnBrowser(Gtk.ScrolledWindow):
 
             # Add categories
             for category_name, cat_path, icon_name, is_fav in categories_list:
-                self.store.append([category_name, cat_path, True, icon_name, is_fav])
+                self.store.append([category_name, cat_path, True, icon_name, is_fav, False])
 
             # Collect root-level projects
             root_projects = []
@@ -267,7 +332,7 @@ class ColumnBrowser(Gtk.ScrolledWindow):
 
             # Add root projects
             for project_name, project_path, is_fav in root_projects_with_fav:
-                self.store.append([project_name, project_path, True, "code", is_fav])
+                self.store.append([project_name, project_path, True, "code", is_fav, False])
 
             # Collect root-level files
             root_files = []
@@ -287,7 +352,7 @@ class ColumnBrowser(Gtk.ScrolledWindow):
 
             # Add root files
             for file_name, file_path, is_fav in root_files_with_fav:
-                self.store.append([file_name, file_path, True, "text-x-generic", is_fav])
+                self.store.append([file_name, file_path, True, "text-x-generic", is_fav, False])
         else:
             # Nested level: parse path
             parts = hierarchy_path.split(":")[1:]  # Ignore first "cat"
@@ -313,7 +378,7 @@ class ColumnBrowser(Gtk.ScrolledWindow):
                     subcats_list.sort(key=lambda x: (not x[3], x[0].lower()))
 
                     for sub_name, sub_path, sub_icon, is_fav in subcats_list:
-                        self.store.append([sub_name, sub_path, True, sub_icon, is_fav])
+                        self.store.append([sub_name, sub_path, True, sub_icon, is_fav, False])
             else:
                 # Deeper levels: nested subcategories
                 current_categories = categories
@@ -340,7 +405,7 @@ class ColumnBrowser(Gtk.ScrolledWindow):
                             subcats_list.sort(key=lambda x: (not x[3], x[0].lower()))
 
                             for sub_name, full_path, sub_icon, is_fav in subcats_list:
-                                self.store.append([sub_name, full_path, True, sub_icon, is_fav])
+                                self.store.append([sub_name, full_path, True, sub_icon, is_fav, False])
 
         self.current_path = hierarchy_path or "categories"
 
@@ -404,7 +469,7 @@ class ColumnBrowser(Gtk.ScrolledWindow):
         category_projects_with_fav.sort(key=lambda x: (not x[2], x[0].lower()))
 
         for project_name, project_path, is_fav in category_projects_with_fav:
-            self.store.append([project_name, project_path, True, "code", is_fav])
+            self.store.append([project_name, project_path, True, "code", is_fav, False])
 
 
 
@@ -548,15 +613,15 @@ class ColumnBrowser(Gtk.ScrolledWindow):
 
         # Add subcategories FIRST (prioritized at top)
         for sub_name, sub_path, sub_icon, is_fav in subcategories_with_fav:
-            self.store.append([sub_name, sub_path, True, sub_icon, is_fav])
+            self.store.append([sub_name, sub_path, True, sub_icon, is_fav, False])
 
         # Then add projects (below subcategories)
         for project_name, project_path, is_fav in category_projects:
-            self.store.append([project_name, project_path, True, "code", is_fav])
+            self.store.append([project_name, project_path, True, "code", is_fav, False])
 
         # Finally add files (below projects)
         for file_name, file_path, is_fav in category_files:
-            self.store.append([file_name, file_path, True, "text-x-generic", is_fav])
+            self.store.append([file_name, file_path, True, "text-x-generic", is_fav, False])
 
     def get_selected_path(self):
         """Get currently selected path"""
@@ -575,7 +640,7 @@ class ColumnBrowser(Gtk.ScrolledWindow):
 
             # Manually trigger selection event
             path = self.store.get_value(first_iter, 1)
-            self.callback(path, True)
+            self.callback(path, True, self)
 
     def get_item_at_position(self, x, y):
         """
