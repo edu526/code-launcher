@@ -78,8 +78,12 @@ class ContextMenuHandler:
 
         elif context_type == CHILD_COLUMN:
             # Child column menu: "Add subcategory", "Add project", and "Add file"
-            self._add_menu_item(menu, "Add subcategory",
-                              lambda w: create_category_action(context, self.column_browser, self.parent_window))
+            # Only show "Add subcategory" if we're not at level 2 (max depth)
+            from .context_detector import get_hierarchy_info
+            hierarchy_info = get_hierarchy_info(context.get('hierarchy_path'))
+            if hierarchy_info['level'] < 2:
+                self._add_menu_item(menu, "Add subcategory",
+                                  lambda w: create_category_action(context, self.column_browser, self.parent_window))
             self._add_menu_item(menu, "Add project",
                               lambda w: add_project_action(context, self.column_browser, self.parent_window))
             self._add_menu_item(menu, "Add file",
@@ -87,8 +91,13 @@ class ContextMenuHandler:
 
         elif context_type == CATEGORY_ITEM:
             # Category item menu: Multiple options
-            self._add_menu_item(menu, "Add subcategory",
-                              lambda w: create_category_action(context, self.column_browser, self.parent_window))
+            # Only show "Add subcategory" if we're not at level 2 (max depth)
+            from .context_detector import get_hierarchy_info
+            item_path = context.get('item_path')
+            hierarchy_info = get_hierarchy_info(item_path)
+            if hierarchy_info['level'] < 2:
+                self._add_menu_item(menu, "Add subcategory",
+                                  lambda w: create_category_action(context, self.column_browser, self.parent_window))
             self._add_menu_item(menu, "Add project",
                               lambda w: add_project_action(context, self.column_browser, self.parent_window))
             self._add_menu_item(menu, "Add file",

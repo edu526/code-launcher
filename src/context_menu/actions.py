@@ -31,6 +31,16 @@ def create_category_action(context, column_browser, parent_window):
         context_type = context.get('type')
         item_path = context.get('item_path')
 
+        # Check hierarchy level to enforce 2-level limit
+        hierarchy_info = get_hierarchy_info(hierarchy_path if hierarchy_path else item_path)
+        current_level = hierarchy_info['level']
+
+        # If we're at level 2 (subcategory), don't allow creating another subcategory
+        if current_level >= 2:
+            logger.warning(f"Cannot create subcategory at level {current_level} - maximum 2 levels allowed")
+            show_error_dialog(parent_window, "Maximum category depth reached.\nOnly 2 levels of categories are allowed:\nCategory → Subcategory")
+            return
+
         # Build pre_config dict based on context
         pre_config = {}
 
