@@ -51,11 +51,17 @@ class SearchManager:
             self.window.reload_interface()
             return
 
+        # Check for special @recent command
+        if search_text.strip() == "@recent":
+            self.show_recent_items()
+            return
+
         # Normalize search text for flexible matching
         normalized_search = self._normalize_text(search_text)
 
-        # Search for matching projects and categories
+        # Search for matching projects, files and categories
         matching_projects = self._find_matching_projects(normalized_search)
+        matching_files = self._find_matching_files(normalized_search)
         matching_categories = self._find_matching_categories(normalized_search, self.window.categories)
 
         # For each found category, add all its projects
@@ -77,11 +83,11 @@ class SearchManager:
         # Convert dict to list and sort alphabetically
         final_projects = sorted(list(all_projects.values()), key=lambda x: x[0].lower())
 
-        if final_projects or matching_categories:
-            self.show_search_results(final_projects, matching_categories)
+        if final_projects or matching_files or matching_categories:
+            self.show_search_results(final_projects, matching_files, matching_categories)
         else:
             # No results - show empty column
-            self.show_search_results([], [])
+            self.show_search_results([], [], [])
 
     def _find_matching_projects(self, normalized_search):
         """
@@ -110,6 +116,34 @@ class SearchManager:
                     ))
 
         return matching_projects
+
+    def _find_matching_files(self, normalized_search):
+        """
+        Find files matching search text
+
+        Args:
+            normalized_search: Normalized search query (lowercase, no special chars)
+
+        Returns:
+            List of tuples (file_name, file_path, category)
+        """
+        matching_files = []
+
+        for file_name, file_info in self.window.files.items():
+            # Normalize file name for comparison
+            normalized_name = self._normalize_text(file_name)
+
+            if normalized_search in normalized_name:
+                if isinstance(file_info, str):
+                    matching_files.append((file_name, file_info, "Otros"))
+                else:
+                    matching_files.append((
+                        file_name,
+                        file_info.get("path", ""),
+                        file_info.get("category", "Otros")
+                    ))
+
+        return matching_files
 
     def _find_matching_categories(self, normalized_search, categories, prefix=""):
         """
@@ -196,12 +230,13 @@ class SearchManager:
 
         return category_projects
 
-    def show_search_results(self, projects, categories):
+    def show_search_results(self, projects, files, categories):
         """
         Display search results in a column
 
         Args:
             projects: List of tuples (project_name, project_path, category)
+            files: List of tuples (file_name, file_path, category)
             categories: List of tuples (category_name, category_path, type)
         """
         # Clear existing columns
@@ -223,16 +258,62 @@ class SearchManager:
         # Add categories first (sorted alphabetically)
         sorted_categories = sorted(categories, key=lambda x: x[0].lower())
         for cat_name, cat_path, cat_type in sorted_categories:
-            results_column.store.append([f"📁 {cat_name}", cat_path, True, "folder"])
+            is_fav = self.window.config.is_favorite(cat_path, "category")
+            results_column.store.append([f"📁 {cat_name}", cat_path, True, "folder", is_fav])
 
         # Add projects (sorted alphabetically)
         sorted_projects = sorted(projects, key=lambda x: x[0].lower())
         for project_name, project_path, category in sorted_projects:
-            results_column.store.append([f"📄 {project_name}", project_path, True, "code"])
+            is_fav = self.window.config.is_favorite(project_path, "project")
+            results_column.store.append([f"📄 {project_name}", project_path, True, "code", is_fav])
+
+        # Add files (sorted alphabetically)
+        sorted_files = sorted(files, key=lambda x: x[0].lower())
+        for file_name, file_path, category in sorted_files:
+            is_fav = self.window.config.is_favorite(file_path, "file")
+            results_column.store.append([f"📄 {file_name}", file_path, True, "text-x-generic", is_fav])
 
         # If no results, show message
-        if not projects and not categories:
-            results_column.store.append(["No results found", "", False, "dialog-information"])
+        if not projects and not files and not categories:
+            results_column.store.append(["No results found", "", False, "dialog-information", False])
+
+        # Add column to interface
+        self.window.columns.append(results_column)
+        self.window.columns_box.pack_start(results_column, True, True, 1)
+        results_column.show_all()
+
+    def show_recent_items(self):
+        """Display recently opened items"""
+        recents = self.window.config.load_recents()
+
+        # Clear existing columns
+        for column in self.window.columns:
+            self.window.columns_box.remove(column)
+        self.window.columns.clear()
+
+        # Create results column
+        from src.ui.column_browser import ColumnBrowser
+
+        results_column = ColumnBrowser(
+            self.window.navigation_manager.on_column_selection,
+            "recent_items",
+            self.window
+        )
+        results_column.current_path = "recent_items"
+        results_column.store.clear()
+
+        if not recents:
+            results_column.store.append(["No recent items", "", False, "dialog-information", False])
+        else:
+            for item in recents:
+                item_name = item.get("name", "Unknown")
+                item_path = item.get("path", "")
+                item_type = item.get("type", "project")
+
+                icon = "text-x-generic" if item_type == "file" else "code"
+                is_fav = self.window.config.is_favorite(item_path, item_type)
+
+                results_column.store.append([item_name, item_path, True, icon, is_fav])
 
         # Add column to interface
         self.window.columns.append(results_column)

@@ -509,6 +509,11 @@ def open_file_action(context, parent_window):
         if success:
             logger.info(f"Successfully opened file in {text_editor}: {file_path}")
 
+            # Add to recents
+            file_name = parent_window._get_file_name(file_path)
+            if file_name:
+                parent_window.config.add_recent(file_path, file_name, "file")
+
             # Close launcher if preference is set
             if hasattr(parent_window, 'close_on_open') and parent_window.close_on_open:
                 parent_window.destroy()
@@ -1081,3 +1086,62 @@ def delete_file_action(context, column_browser, parent_window):
     except Exception as e:
         logger.error(f"Error deleting file: {e}", exc_info=True)
         show_error_dialog(parent_window, f"Error deleting file: {e}")
+
+
+def toggle_favorite_action(context, column_browser, parent_window, item_type="project"):
+    """
+    Handle toggle favorite action
+
+    Args:
+        context: Context dictionary with item information
+        column_browser: ColumnBrowser instance
+        parent_window: FinderStyleWindow instance
+        item_type: "project", "file", or "category"
+    """
+    try:
+        logger.info(f"Toggle favorite action triggered for {item_type} with context: {context}")
+
+        item_path = context.get('item_path')
+
+        if not item_path:
+            logger.error("No item path found in context")
+            return
+
+        # Toggle favorite status
+        is_fav = parent_window.config.toggle_favorite(item_path, item_type)
+        status = "added to" if is_fav else "removed from"
+        logger.info(f"Item {status} favorites: {item_path}")
+
+        # Determine the correct refresh method based on current_path
+        current_path = column_browser.current_path
+
+        # Check if we're in the root categories view or a nested view
+        if current_path is None or current_path == "categories":
+            # Root level - use load_hierarchy_level
+            column_browser.load_hierarchy_level(
+                parent_window.categories,
+                None,
+                parent_window.projects,
+                parent_window.files
+            )
+        elif current_path and current_path.startswith("cat:"):
+            # We're in a category view - use load_mixed_content
+            column_browser.load_mixed_content(
+                parent_window.categories,
+                current_path,
+                parent_window.projects,
+                parent_window.files
+            )
+        else:
+            # Fallback - try load_mixed_content
+            if hasattr(column_browser, 'load_mixed_content'):
+                column_browser.load_mixed_content(
+                    parent_window.categories,
+                    column_browser.current_path,
+                    parent_window.projects,
+                    parent_window.files
+                )
+
+    except Exception as e:
+        logger.error(f"Error toggling favorite: {e}", exc_info=True)
+        show_error_dialog(parent_window, f"Error toggling favorite: {e}")

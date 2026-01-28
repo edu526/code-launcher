@@ -498,6 +498,13 @@ class FinderStyleWindow(Gtk.Window):
             return False
 
         try:
+            # Find project name
+            project_name = self._get_project_name(project_path)
+
+            # Add to recents
+            if project_name:
+                self.config.add_recent(resolved_path, project_name, "project")
+
             subprocess.Popen(['code', resolved_path])
             # Close launcher if preference is enabled
             if self.close_on_open:
@@ -518,6 +525,13 @@ class FinderStyleWindow(Gtk.Window):
             return False
 
         try:
+            # Find project name
+            project_name = self._get_project_name(project_path)
+
+            # Add to recents
+            if project_name:
+                self.config.add_recent(resolved_path, project_name, "project")
+
             subprocess.Popen(['kiro', resolved_path])
             # Close launcher if preference is enabled
             if self.close_on_open:
@@ -529,6 +543,28 @@ class FinderStyleWindow(Gtk.Window):
         except Exception as e:
             print(f"Error opening Kiro: {e}")
             return False
+
+    def _get_project_name(self, project_path):
+        """Get project name from path"""
+        for name, info in self.projects.items():
+            if isinstance(info, str):
+                if info == project_path:
+                    return name
+            else:
+                if info.get("path") == project_path:
+                    return name
+        return os.path.basename(project_path)
+
+    def _get_file_name(self, file_path):
+        """Get file name from path"""
+        for name, info in self.files.items():
+            if isinstance(info, str):
+                if info == file_path:
+                    return name
+            else:
+                if info.get("path") == file_path:
+                    return name
+        return os.path.basename(file_path)
 
     def _is_project_path(self, path):
         """Validate if path is a valid project"""

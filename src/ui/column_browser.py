@@ -22,8 +22,8 @@ class ColumnBrowser(Gtk.ScrolledWindow):
         self.set_min_content_width(200)
         self.set_shadow_type(Gtk.ShadowType.IN)
 
-        # Item list
-        self.store = Gtk.ListStore(str, str, bool, str)  # display_name, full_path, is_dir, icon_name
+        # Item list - added favorite flag
+        self.store = Gtk.ListStore(str, str, bool, str, bool)  # display_name, full_path, is_dir, icon_name, is_favorite
         self.treeview = Gtk.TreeView(model=self.store)
         self.treeview.set_headers_visible(False)
         self.treeview.set_enable_search(False)
@@ -40,7 +40,7 @@ class ColumnBrowser(Gtk.ScrolledWindow):
         text_renderer = Gtk.CellRendererText()
         text_renderer.set_property("ellipsize", Pango.EllipsizeMode.END)
         column.pack_start(text_renderer, True)
-        column.add_attribute(text_renderer, "text", 0)
+        column.set_cell_data_func(text_renderer, self.text_data_func)
 
         self.treeview.append_column(column)
 
@@ -66,6 +66,16 @@ class ColumnBrowser(Gtk.ScrolledWindow):
         """Assign icon based on type"""
         icon_name = model.get_value(iter, 3)
         cell.set_property("icon-name", icon_name)
+
+    def text_data_func(self, column, cell, model, iter, data):
+        """Add star to favorited items"""
+        display_name = model.get_value(iter, 0)
+        is_favorite = model.get_value(iter, 4)
+
+        if is_favorite:
+            cell.set_property("text", f"★ {display_name}")
+        else:
+            cell.set_property("text", display_name)
 
     def on_selection_changed(self, selection):
         """When an item is selected"""
@@ -102,8 +112,14 @@ class ColumnBrowser(Gtk.ScrolledWindow):
                 text_editor = getattr(self.parent_window, 'default_text_editor', 'gnome-text-editor')
                 success = open_file_in_editor(full_path, text_editor)
 
-                if success and hasattr(self.parent_window, 'close_on_open') and self.parent_window.close_on_open:
-                    self.parent_window.destroy()
+                if success:
+                    # Add to recents
+                    file_name = self.parent_window._get_file_name(full_path)
+                    if file_name and hasattr(self.parent_window, 'config'):
+                        self.parent_window.config.add_recent(full_path, file_name, "file")
+
+                    if hasattr(self.parent_window, 'close_on_open') and self.parent_window.close_on_open:
+                        self.parent_window.destroy()
         else:
             # It's a project - open with default editor
             if self.parent_window:
@@ -185,7 +201,7 @@ class ColumnBrowser(Gtk.ScrolledWindow):
             items.sort(key=lambda x: x[0].lower())
 
             for display_name, full_path in items:
-                self.store.append([display_name, full_path, True, "folder"])
+                self.store.append([display_name, full_path, True, "folder", False])
 
         except PermissionError:
             pass
@@ -200,7 +216,7 @@ class ColumnBrowser(Gtk.ScrolledWindow):
 
         for category_name, category_info in sorted_categories:
             icon_name = category_info.get("icon", "folder")
-            self.store.append([category_name, f"category:{category_name}", True, icon_name])
+            self.store.append([category_name, f"category:{category_name}", True, icon_name, False])
 
     def load_hierarchy_level(self, categories, hierarchy_path=None, projects=None, files=None):
         """Load a specific level of the hierarchy, including root-level projects and files"""
@@ -211,47 +227,67 @@ class ColumnBrowser(Gtk.ScrolledWindow):
         if files is None:
             files = {}
 
+        # Get config for checking favorites
+        config = self.parent_window.config if self.parent_window else None
+
         if hierarchy_path is None:
             # Root level: show main categories, plus root-level projects and files
             self.current_path = "categories"
 
-            # Add categories first
-            sorted_categories = sorted(categories.items(), key=lambda x: x[0].lower())
-            for category_name, category_info in sorted_categories:
+            # Collect categories with favorite status
+            categories_list = []
+            for category_name, category_info in categories.items():
                 icon_name = category_info.get("icon", "folder")
-                self.store.append([category_name, f"cat:{category_name}", True, icon_name])
+                cat_path = f"cat:{category_name}"
+                is_fav = config.is_favorite(cat_path, "category") if config else False
+                categories_list.append((category_name, cat_path, icon_name, is_fav))
 
-            # Add root-level projects (without category)
+            # Sort: favorites first, then alphabetically
+            categories_list.sort(key=lambda x: (not x[3], x[0].lower()))
+
+            # Add categories
+            for category_name, cat_path, icon_name, is_fav in categories_list:
+                self.store.append([category_name, cat_path, True, icon_name, is_fav])
+
+            # Collect root-level projects
             root_projects = []
             for project_name, project_info in projects.items():
                 if isinstance(project_info, str):
-                    # Old format - no category
                     root_projects.append((project_name, project_info))
                 elif isinstance(project_info, dict):
-                    # New format - check if has no category
                     if "category" not in project_info or project_info.get("category") is None:
                         root_projects.append((project_name, project_info.get("path", "")))
 
-            # Sort and add root projects
-            root_projects.sort(key=lambda x: x[0].lower())
+            # Sort projects: favorites first, then alphabetically
+            root_projects_with_fav = []
             for project_name, project_path in root_projects:
-                self.store.append([project_name, project_path, True, "code"])
+                is_fav = config.is_favorite(project_path, "project") if config else False
+                root_projects_with_fav.append((project_name, project_path, is_fav))
+            root_projects_with_fav.sort(key=lambda x: (not x[2], x[0].lower()))
 
-            # Add root-level files (without category)
+            # Add root projects
+            for project_name, project_path, is_fav in root_projects_with_fav:
+                self.store.append([project_name, project_path, True, "code", is_fav])
+
+            # Collect root-level files
             root_files = []
             for file_name, file_info in files.items():
                 if isinstance(file_info, str):
-                    # Old format - no category
                     root_files.append((file_name, file_info))
                 elif isinstance(file_info, dict):
-                    # New format - check if has no category
                     if "category" not in file_info or file_info.get("category") is None:
                         root_files.append((file_name, file_info.get("path", "")))
 
-            # Sort and add root files
-            root_files.sort(key=lambda x: x[0].lower())
+            # Sort files: favorites first, then alphabetically
+            root_files_with_fav = []
             for file_name, file_path in root_files:
-                self.store.append([file_name, file_path, True, "text-x-generic"])
+                is_fav = config.is_favorite(file_path, "file") if config else False
+                root_files_with_fav.append((file_name, file_path, is_fav))
+            root_files_with_fav.sort(key=lambda x: (not x[2], x[0].lower()))
+
+            # Add root files
+            for file_name, file_path, is_fav in root_files_with_fav:
+                self.store.append([file_name, file_path, True, "text-x-generic", is_fav])
         else:
             # Nested level: parse path
             parts = hierarchy_path.split(":")[1:]  # Ignore first "cat"
@@ -264,13 +300,20 @@ class ColumnBrowser(Gtk.ScrolledWindow):
                 if category_name in categories:
                     cat_info = categories[category_name]
 
-                    # Load subcategories
+                    # Load subcategories with favorite status
                     subcategories = cat_info.get("subcategories", {})
-                    sorted_subcats = sorted(subcategories.items(), key=lambda x: x[0].lower())
-
-                    for sub_name, sub_info in sorted_subcats:
+                    subcats_list = []
+                    for sub_name, sub_info in subcategories.items():
                         sub_icon = sub_info.get("icon", "folder")
-                        self.store.append([sub_name, f"cat:{category_name}:{sub_name}", True, sub_icon])
+                        sub_path = f"cat:{category_name}:{sub_name}"
+                        is_fav = config.is_favorite(sub_path, "category") if config else False
+                        subcats_list.append((sub_name, sub_path, sub_icon, is_fav))
+
+                    # Sort: favorites first, then alphabetically
+                    subcats_list.sort(key=lambda x: (not x[3], x[0].lower()))
+
+                    for sub_name, sub_path, sub_icon, is_fav in subcats_list:
+                        self.store.append([sub_name, sub_path, True, sub_icon, is_fav])
             else:
                 # Deeper levels: nested subcategories
                 current_categories = categories
@@ -285,12 +328,19 @@ class ColumnBrowser(Gtk.ScrolledWindow):
                         if part in current_categories:
                             subcat_info = current_categories[part]
                             subcategories = subcat_info.get("subcategories", {})
-                            sorted_subcats = sorted(subcategories.items(), key=lambda x: x[0].lower())
 
-                            for sub_name, sub_info in sorted_subcats:
+                            subcats_list = []
+                            for sub_name, sub_info in subcategories.items():
                                 sub_icon = sub_info.get("icon", "folder")
                                 full_path = f"cat:{':'.join(parts)}:{sub_name}"
-                                self.store.append([sub_name, full_path, True, sub_icon])
+                                is_fav = config.is_favorite(full_path, "category") if config else False
+                                subcats_list.append((sub_name, full_path, sub_icon, is_fav))
+
+                            # Sort: favorites first, then alphabetically
+                            subcats_list.sort(key=lambda x: (not x[3], x[0].lower()))
+
+                            for sub_name, full_path, sub_icon, is_fav in subcats_list:
+                                self.store.append([sub_name, full_path, True, sub_icon, is_fav])
 
         self.current_path = hierarchy_path or "categories"
 
@@ -298,6 +348,9 @@ class ColumnBrowser(Gtk.ScrolledWindow):
         """Load projects corresponding to current hierarchy level"""
         self.store.clear()
         self.current_path = f"projects:{hierarchy_path}"
+
+        # Get config for checking favorites
+        config = self.parent_window.config if self.parent_window else None
 
         # Parse hierarchy path
         if not hierarchy_path or hierarchy_path == "categories":
@@ -343,11 +396,15 @@ class ColumnBrowser(Gtk.ScrolledWindow):
                 if not project_category:
                     category_projects.append((project_name, project_path))
 
-        # Sort projects alphabetically
-        category_projects.sort(key=lambda x: x[0].lower())
-
+        # Add favorite status and sort: favorites first, then alphabetically
+        category_projects_with_fav = []
         for project_name, project_path in category_projects:
-            self.store.append([project_name, project_path, True, "code"])
+            is_fav = config.is_favorite(project_path, "project") if config else False
+            category_projects_with_fav.append((project_name, project_path, is_fav))
+        category_projects_with_fav.sort(key=lambda x: (not x[2], x[0].lower()))
+
+        for project_name, project_path, is_fav in category_projects_with_fav:
+            self.store.append([project_name, project_path, True, "code", is_fav])
 
 
 
@@ -358,6 +415,9 @@ class ColumnBrowser(Gtk.ScrolledWindow):
 
         if files is None:
             files = {}
+
+        # Get config for checking favorites
+        config = self.parent_window.config if self.parent_window else None
 
         # Collect subcategories
         subcategories_list = []
@@ -440,7 +500,8 @@ class ColumnBrowser(Gtk.ScrolledWindow):
                     belongs_to_level = True
 
             if belongs_to_level:
-                category_projects.append((project_name, project_path))
+                is_fav = config.is_favorite(project_path, "project") if config else False
+                category_projects.append((project_name, project_path, is_fav))
 
         # Filter and collect files
         category_files = []
@@ -471,23 +532,31 @@ class ColumnBrowser(Gtk.ScrolledWindow):
                     belongs_to_level = True
 
             if belongs_to_level:
-                category_files.append((file_name, file_path))
+                is_fav = config.is_favorite(file_path, "file") if config else False
+                category_files.append((file_name, file_path, is_fav))
 
-        # Sort projects and files alphabetically
-        category_projects.sort(key=lambda x: x[0].lower())
-        category_files.sort(key=lambda x: x[0].lower())
+        # Sort projects and files alphabetically, but prioritize favorites
+        category_projects.sort(key=lambda x: (not x[2], x[0].lower()))  # Favorites first, then alphabetical
+        category_files.sort(key=lambda x: (not x[2], x[0].lower()))
+
+        # Sort subcategories: favorites first, then alphabetically
+        subcategories_with_fav = []
+        for sub_name, sub_path, sub_icon in subcategories_list:
+            is_fav = config.is_favorite(sub_path, "category") if config else False
+            subcategories_with_fav.append((sub_name, sub_path, sub_icon, is_fav))
+        subcategories_with_fav.sort(key=lambda x: (not x[3], x[0].lower()))
 
         # Add subcategories FIRST (prioritized at top)
-        for sub_name, sub_path, sub_icon in subcategories_list:
-            self.store.append([sub_name, sub_path, True, sub_icon])
+        for sub_name, sub_path, sub_icon, is_fav in subcategories_with_fav:
+            self.store.append([sub_name, sub_path, True, sub_icon, is_fav])
 
         # Then add projects (below subcategories)
-        for project_name, project_path in category_projects:
-            self.store.append([project_name, project_path, True, "code"])
+        for project_name, project_path, is_fav in category_projects:
+            self.store.append([project_name, project_path, True, "code", is_fav])
 
         # Finally add files (below projects)
-        for file_name, file_path in category_files:
-            self.store.append([file_name, file_path, True, "text-x-generic"])
+        for file_name, file_path, is_fav in category_files:
+            self.store.append([file_name, file_path, True, "text-x-generic", is_fav])
 
     def get_selected_path(self):
         """Get currently selected path"""

@@ -13,6 +13,8 @@ PROJECTS_FILE = os.path.expanduser("~/.config/code-launcher/projects.json")
 FILES_FILE = os.path.expanduser("~/.config/code-launcher/files.json")
 CATEGORIES_FILE = os.path.expanduser("~/.config/code-launcher/categories.json")
 PREFERENCES_FILE = os.path.expanduser("~/.config/code-launcher/preferences.json")
+FAVORITES_FILE = os.path.expanduser("~/.config/code-launcher/favorites.json")
+RECENTS_FILE = os.path.expanduser("~/.config/code-launcher/recents.json")
 LOCK_FILE = os.path.expanduser("~/.config/code-launcher/launcher.lock")
 PID_FILE = os.path.expanduser("~/.config/code-launcher/launcher.pid")
 
@@ -196,6 +198,85 @@ class ConfigManager:
         terminal_prefs = self.get_terminal_preferences()
         terminal_prefs["last_detected"] = timestamp
         self.set_terminal_preferences(terminal_prefs)
+
+    def load_favorites(self):
+        """Load favorites from configuration"""
+        if os.path.exists(FAVORITES_FILE):
+            try:
+                with open(FAVORITES_FILE, 'r') as f:
+                    return json.load(f)
+            except:
+                pass
+        return {"projects": [], "files": [], "categories": []}
+
+    def save_favorites(self, favorites):
+        """Save favorites"""
+        with open(FAVORITES_FILE, 'w') as f:
+            json.dump(favorites, f, indent=2)
+
+    def is_favorite(self, item_path, item_type="project"):
+        """Check if an item is favorited"""
+        favorites = self.load_favorites()
+        if item_type == "category":
+            key = "categories"
+        elif item_type == "file":
+            key = "files"
+        else:
+            key = "projects"
+        return item_path in favorites.get(key, [])
+
+    def toggle_favorite(self, item_path, item_type="project"):
+        """Toggle favorite status of an item"""
+        favorites = self.load_favorites()
+        if item_type == "category":
+            key = "categories"
+        elif item_type == "file":
+            key = "files"
+        else:
+            key = "projects"
+
+        if key not in favorites:
+            favorites[key] = []
+
+        if item_path in favorites[key]:
+            favorites[key].remove(item_path)
+        else:
+            favorites[key].append(item_path)
+
+        self.save_favorites(favorites)
+        return item_path in favorites[key]
+
+    def load_recents(self):
+        """Load recent items from configuration"""
+        if os.path.exists(RECENTS_FILE):
+            try:
+                with open(RECENTS_FILE, 'r') as f:
+                    return json.load(f)
+            except:
+                pass
+        return []
+
+    def save_recents(self, recents):
+        """Save recent items (limit to 20 most recent)"""
+        with open(RECENTS_FILE, 'w') as f:
+            json.dump(recents[:20], f, indent=2)
+
+    def add_recent(self, item_path, item_name, item_type="project"):
+        """Add an item to recents list"""
+        recents = self.load_recents()
+
+        # Remove if already exists
+        recents = [r for r in recents if r.get("path") != item_path]
+
+        # Add to front
+        recents.insert(0, {
+            "path": item_path,
+            "name": item_name,
+            "type": item_type,
+            "timestamp": __import__('time').time()
+        })
+
+        self.save_recents(recents)
 
     def get_category_hierarchy(self, categories):
         """Get complete hierarchy of categories and subcategories"""

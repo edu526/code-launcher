@@ -97,6 +97,16 @@ class ContextMenuHandler:
             # Separator
             menu.append(Gtk.SeparatorMenuItem())
 
+            # Toggle favorite
+            from .actions import toggle_favorite_action
+            is_fav = self.parent_window.config.is_favorite(context.get('item_path'), "category")
+            fav_label = "Remove from Favorites" if is_fav else "Add to Favorites"
+            self._add_menu_item(menu, fav_label,
+                              lambda w: toggle_favorite_action(context, self.column_browser, self.parent_window, "category"))
+
+            # Separator
+            menu.append(Gtk.SeparatorMenuItem())
+
             self._add_menu_item(menu, "Rename",
                               lambda w: rename_category_action(context, self.column_browser, self.parent_window))
             self._add_menu_item(menu, "Delete",
@@ -117,6 +127,16 @@ class ContextMenuHandler:
             # Separator
             menu.append(Gtk.SeparatorMenuItem())
 
+            # Toggle favorite
+            from .actions import toggle_favorite_action
+            is_fav = self.parent_window.config.is_favorite(context.get('item_path'), "project")
+            fav_label = "Remove from Favorites" if is_fav else "Add to Favorites"
+            self._add_menu_item(menu, fav_label,
+                              lambda w: toggle_favorite_action(context, self.column_browser, self.parent_window, "project"))
+
+            # Separator
+            menu.append(Gtk.SeparatorMenuItem())
+
             self._add_menu_item(menu, "Delete project",
                               lambda w: delete_project_action(context, self.column_browser, self.parent_window))
 
@@ -124,6 +144,16 @@ class ContextMenuHandler:
             # File item menu: Open and Delete
             self._add_menu_item(menu, "Open",
                               lambda w: open_file_action(context, self.parent_window))
+
+            # Separator
+            menu.append(Gtk.SeparatorMenuItem())
+
+            # Toggle favorite
+            from .actions import toggle_favorite_action
+            is_fav = self.parent_window.config.is_favorite(context.get('item_path'), "file")
+            fav_label = "Remove from Favorites" if is_fav else "Add to Favorites"
+            self._add_menu_item(menu, fav_label,
+                              lambda w: toggle_favorite_action(context, self.column_browser, self.parent_window, "file"))
 
             # Separator
             menu.append(Gtk.SeparatorMenuItem())
