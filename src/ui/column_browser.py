@@ -84,7 +84,13 @@ class ColumnBrowser(Gtk.ScrolledWindow):
 
         # Highlight breadcrumb trail with a subtle background color
         if is_in_breadcrumb:
-            cell.set_property("background", "#E8F4F8")  # Light blue background
+            # Get theme-aware color for breadcrumb
+            style_context = self.treeview.get_style_context()
+            bg_color = style_context.get_background_color(Gtk.StateFlags.SELECTED)
+
+            # Use a more subtle version of the selection color (30% opacity)
+            breadcrumb_color = f"rgba({int(bg_color.red * 255)}, {int(bg_color.green * 255)}, {int(bg_color.blue * 255)}, 0.3)"
+            cell.set_property("background", breadcrumb_color)
             cell.set_property("background-set", True)
         else:
             cell.set_property("background-set", False)
